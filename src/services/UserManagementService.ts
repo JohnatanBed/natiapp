@@ -1,5 +1,6 @@
 // User Management Service
 // This service handles user registration, authentication, and management
+import { apiService } from './ApiService';
 
 export interface User {
   id: string;
@@ -22,6 +23,15 @@ export interface UserRegistrationResponse {
   message: string;
   user?: User;
   error?: string;
+  token?: string;
+}
+
+export interface UserLoginResponse {
+  success: boolean;
+  message: string;
+  user?: User;
+  error?: string;
+  token?: string;
 }
 
 export interface AdminLoginResponse {
@@ -29,6 +39,7 @@ export interface AdminLoginResponse {
   message: string;
   admin?: AdminUser;
   error?: string;
+  token?: string;
 }
 
 export interface UserListResponse {
@@ -44,7 +55,7 @@ export interface UserStatusToggleResponse {
 }
 
 class UserManagementService {
-  private baseURL: string = 'https://your-backend-api.com/api'; // Replace with your backend URL
+  private isDevelopment: boolean = true; // Set to false to use the actual backend
   private users: Map<string, User> = new Map(); // Mock storage for development
   private admins: Map<string, AdminUser> = new Map(); // Mock admin storage
 
@@ -62,35 +73,106 @@ class UserManagementService {
    * Register a new user
    * @param name - User's full name
    * @param phoneNumber - User's phone number
+   * @param password - User's password
    * @returns Promise with registration response
    */
-  async registerUser(name: string, phoneNumber: string): Promise<UserRegistrationResponse> {
+  async registerUser(name: string, phoneNumber: string, password: string = "default123"): Promise<UserRegistrationResponse> {
     try {
-      // In development, simulate API call
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          const user: User = {
-            id: `user_${Date.now()}`,
-            name,
-            phoneNumber,
-            isActive: true,
-            registeredAt: new Date(),
-          };
+      if (this.isDevelopment) {
+        // In development, simulate API call
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            const user: User = {
+              id: `user_${Date.now()}`,
+              name,
+              phoneNumber,
+              isActive: true,
+              registeredAt: new Date(),
+            };
 
-          this.users.set(phoneNumber, user);
+            this.users.set(phoneNumber, user);
 
-          resolve({
-            success: true,
-            message: 'Usuario registrado exitosamente',
-            user
-          });
-        }, 500);
-      });
+            resolve({
+              success: true,
+              message: 'Usuario registrado exitosamente',
+              user
+            });
+          }, 500);
+        });
+      } else {
+        // Use the real backend API
+        const response = await apiService.post<UserRegistrationResponse>('/auth/register', {
+          name,
+          phoneNumber,
+          password
+        });
+        
+        // Store the token if registration was successful
+        if (response.success && response.token) {
+          await apiService.setToken(response.token);
+        }
+        
+        return response;
+      }
     } catch (error) {
       return {
         success: false,
         message: 'Error al registrar usuario',
-        error: 'Registration failed'
+        error: error instanceof Error ? error.message : 'Registration failed'
+      };
+    }
+  }
+
+  /**
+   * Login user
+   * @param phoneNumber - User's phone number
+   * @param password - User's password
+   * @returns Promise with login response
+   */
+  async loginUser(phoneNumber: string, password: string = "default123"): Promise<UserLoginResponse> {
+    try {
+      if (this.isDevelopment) {
+        // Mock login for development
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            const user = this.users.get(phoneNumber);
+            if (user) {
+              user.lastLogin = new Date();
+              this.users.set(phoneNumber, user);
+              
+              resolve({
+                success: true,
+                message: 'Login exitoso',
+                user
+              });
+            } else {
+              resolve({
+                success: false,
+                message: 'Usuario no encontrado',
+                error: 'User not found'
+              });
+            }
+          }, 500);
+        });
+      } else {
+        // Use the real backend API
+        const response = await apiService.post<UserLoginResponse>('/auth/login', {
+          phoneNumber,
+          password
+        });
+        
+        // Store the token if login was successful
+        if (response.success && response.token) {
+          await apiService.setToken(response.token);
+        }
+        
+        return response;
+      }
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Error de autenticación',
+        error: error instanceof Error ? error.message : 'Login failed'
       };
     }
   }
@@ -102,18 +184,23 @@ class UserManagementService {
    */
   async updateLastLogin(phoneNumber: string): Promise<{ success: boolean; error?: string }> {
     try {
-      // In development, simulate API call
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          const user = this.users.get(phoneNumber);
-          if (user) {
-            user.lastLogin = new Date();
-            this.users.set(phoneNumber, user);
-          }
+      if (this.isDevelopment) {
+        // In development, simulate API call
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            const user = this.users.get(phoneNumber);
+            if (user) {
+              user.lastLogin = new Date();
+              this.users.set(phoneNumber, user);
+            }
 
-          resolve({ success: true });
-        }, 200);
-      });
+            resolve({ success: true });
+          }, 200);
+        });
+      } else {
+        // This functionality is now handled by the backend during login
+        return { success: true };
+      }
     } catch (error) {
       return {
         success: false,
@@ -130,31 +217,46 @@ class UserManagementService {
    */
   async adminLogin(email: string, password: string): Promise<AdminLoginResponse> {
     try {
-      // In development, simulate API call
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          // Demo credentials
-          if (email === 'admin@natiapp.com' && password === 'admin123') {
-            const admin = this.admins.get(email);
-            resolve({
-              success: true,
-              message: 'Login exitoso',
-              admin
-            });
-          } else {
-            resolve({
-              success: false,
-              message: 'Credenciales incorrectas',
-              error: 'Invalid credentials'
-            });
-          }
-        }, 1000);
-      });
+      if (this.isDevelopment) {
+        // In development, simulate API call
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            // Demo credentials
+            if (email === 'admin@natiapp.com' && password === 'admin123') {
+              const admin = this.admins.get(email);
+              resolve({
+                success: true,
+                message: 'Login exitoso',
+                admin
+              });
+            } else {
+              resolve({
+                success: false,
+                message: 'Credenciales incorrectas',
+                error: 'Invalid credentials'
+              });
+            }
+          }, 1000);
+        });
+      } else {
+        // Use the real backend API
+        const response = await apiService.post<AdminLoginResponse>('/auth/admin-login', {
+          email,
+          password
+        });
+        
+        // Store the token if login was successful
+        if (response.success && response.token) {
+          await apiService.setToken(response.token);
+        }
+        
+        return response;
+      }
     } catch (error) {
       return {
         success: false,
         message: 'Error de conexión',
-        error: 'Login failed'
+        error: error instanceof Error ? error.message : 'Login failed'
       };
     }
   }
@@ -165,20 +267,25 @@ class UserManagementService {
    */
   async getAllUsers(): Promise<UserListResponse> {
     try {
-      // In development, simulate API call
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          const users = Array.from(this.users.values());
-          resolve({
-            success: true,
-            users
-          });
-        }, 500);
-      });
+      if (this.isDevelopment) {
+        // In development, simulate API call
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            const users = Array.from(this.users.values());
+            resolve({
+              success: true,
+              users
+            });
+          }, 500);
+        });
+      } else {
+        // Use the real backend API
+        return await apiService.get<UserListResponse>('/users');
+      }
     } catch (error) {
       return {
         success: false,
-        error: 'Failed to fetch users'
+        error: error instanceof Error ? error.message : 'Failed to fetch users'
       };
     }
   }
@@ -190,40 +297,45 @@ class UserManagementService {
    */
   async toggleUserStatus(userId: string): Promise<UserStatusToggleResponse> {
     try {
-      // In development, simulate API call
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          // Find user by ID
-          let foundUser: User | undefined;
-          for (const user of this.users.values()) {
-            if (user.id === userId) {
-              foundUser = user;
-              break;
+      if (this.isDevelopment) {
+        // In development, simulate API call
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            // Find user by ID
+            let foundUser: User | undefined;
+            for (const user of this.users.values()) {
+              if (user.id === userId) {
+                foundUser = user;
+                break;
+              }
             }
-          }
 
-          if (foundUser) {
-            foundUser.isActive = !foundUser.isActive;
-            this.users.set(foundUser.phoneNumber, foundUser);
-            
-            resolve({
-              success: true,
-              message: `Usuario ${foundUser.isActive ? 'activado' : 'desactivado'} exitosamente`
-            });
-          } else {
-            resolve({
-              success: false,
-              message: 'Usuario no encontrado',
-              error: 'User not found'
-            });
-          }
-        }, 500);
-      });
+            if (foundUser) {
+              foundUser.isActive = !foundUser.isActive;
+              this.users.set(foundUser.phoneNumber, foundUser);
+              
+              resolve({
+                success: true,
+                message: `Usuario ${foundUser.isActive ? 'activado' : 'desactivado'} exitosamente`
+              });
+            } else {
+              resolve({
+                success: false,
+                message: 'Usuario no encontrado',
+                error: 'User not found'
+              });
+            }
+          }, 500);
+        });
+      } else {
+        // Use the real backend API
+        return await apiService.put<UserStatusToggleResponse>(`/users/${userId}/status`, {});
+      }
     } catch (error) {
       return {
         success: false,
         message: 'Error al cambiar estado del usuario',
-        error: 'Toggle status failed'
+        error: error instanceof Error ? error.message : 'Toggle status failed'
       };
     }
   }
@@ -244,6 +356,17 @@ class UserManagementService {
    */
   userExists(phoneNumber: string): boolean {
     return this.users.has(phoneNumber);
+  }
+
+  /**
+   * Log out user
+   * @returns Promise
+   */
+  async logout(): Promise<void> {
+    if (!this.isDevelopment) {
+      // Clear token from storage
+      await apiService.clearToken();
+    }
   }
 }
 
