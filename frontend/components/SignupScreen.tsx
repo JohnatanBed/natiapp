@@ -317,8 +317,8 @@ const SignupScreen = ({ onSignupSuccess, onBackToLogin }: SignupScreenProps) => 
     setMessageType('');
 
     try {
-      // Registrar usuario en el sistema de gestión
-      const registrationResult = await userManagementService.registerUser(name, phoneNumber);
+      // Registrar usuario en el sistema de gestión utilizando el PIN como contraseña
+      const registrationResult = await userManagementService.registerUser(name, phoneNumber, pin);
       
       if (registrationResult.success) {
         setMessage(`¡Bienvenido ${name}! Tu cuenta ha sido creada exitosamente.`);

@@ -6,11 +6,11 @@
 import React, { useState } from 'react';
 import { StatusBar, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import LoginScreen from './src/components/LoginScreen';
-import SignupScreen from './src/components/SignupScreen';
-import HomeScreen from './src/components/HomeScreen';
-import AdminLoginScreen from './src/components/AdminLoginScreen';
-import AdminDashboard from './src/components/AdminDashboard';
+import LoginScreen from './frontend/components/LoginScreen';
+import SignupScreen from './frontend/components/SignupScreen';
+import HomeScreen from './frontend/components/HomeScreen';
+import AdminLoginScreen from './frontend/components/AdminLoginScreen';
+import AdminDashboard from './frontend/components/AdminDashboard';
 
 type Screen = 'login' | 'signup' | 'home' | 'adminLogin' | 'adminDashboard';
 

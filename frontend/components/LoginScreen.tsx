@@ -139,11 +139,38 @@ const LoginScreen = ({ onLoginSuccess, onNavigateToSignup, onNavigateToAdminLogi
       return;
     }
 
-    // Actualizar último acceso del usuario
-    await userManagementService.updateLastLogin(phoneNumber);
-
-    // Llamar directamente a la función de éxito
-    onLoginSuccess(phoneNumber);
+    try {
+      setMessage('');
+      setMessageType('');
+      
+      // Iniciar sesión con el número de teléfono y el PIN (contraseña)
+      const loginResult = await userManagementService.loginUser(phoneNumber, code);
+      
+      if (loginResult.success) {
+        setMessage('Sesión iniciada correctamente');
+        setMessageType('success');
+        
+        // Después de un breve retraso, navegar a la pantalla principal
+        setTimeout(() => {
+          onLoginSuccess(phoneNumber);
+        }, 1000);
+      } else {
+        setMessage(loginResult.error || 'PIN incorrecto');
+        setMessageType('error');
+        
+        // Limpiar campos de código
+        setCode('');
+        setShowCode(['', '', '', '']);
+        
+        // Enfocar el primer campo
+        setTimeout(() => {
+          codeInputRefs[0].current?.focus();
+        }, 100);
+      }
+    } catch (error) {
+      setMessage('Error de conexión. Inténtalo de nuevo.');
+      setMessageType('error');
+    }
   };
 
   const handleSignUp = () => {

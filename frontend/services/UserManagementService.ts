@@ -55,7 +55,7 @@ export interface UserStatusToggleResponse {
 }
 
 class UserManagementService {
-  private isDevelopment: boolean = true; // Set to false to use the actual backend
+  private isDevelopment: boolean = false; // Already set to false to use the actual backend
   private users: Map<string, User> = new Map(); // Mock storage for development
   private admins: Map<string, AdminUser> = new Map(); // Mock admin storage
 
@@ -164,6 +164,8 @@ class UserManagementService {
         // Store the token if login was successful
         if (response.success && response.token) {
           await apiService.setToken(response.token);
+          // Also update last login timestamp
+          await this.updateLastLogin(phoneNumber);
         }
         
         return response;
@@ -343,19 +345,40 @@ class UserManagementService {
   /**
    * Get user by phone number
    * @param phoneNumber - User's phone number
-   * @returns User if found, undefined otherwise
+   * @returns Promise with user if found, undefined otherwise
    */
-  getUserByPhoneNumber(phoneNumber: string): User | undefined {
-    return this.users.get(phoneNumber);
+  async getUserByPhoneNumber(phoneNumber: string): Promise<User | undefined> {
+    try {
+      if (this.isDevelopment) {
+        return this.users.get(phoneNumber);
+      } else {
+        // Use the real backend API
+        const response = await apiService.get<{success: boolean; user?: User}>(`/users/phone/${phoneNumber}`);
+        return response.success ? response.user : undefined;
+      }
+    } catch (error) {
+      console.error('Error fetching user:', error);
+      return undefined;
+    }
   }
 
   /**
    * Check if user exists
    * @param phoneNumber - User's phone number
-   * @returns boolean indicating if user exists
+   * @returns Promise with boolean indicating if user exists
    */
-  userExists(phoneNumber: string): boolean {
-    return this.users.has(phoneNumber);
+  async userExists(phoneNumber: string): Promise<boolean> {
+    try {
+      if (this.isDevelopment) {
+        return this.users.has(phoneNumber);
+      } else {
+        const user = await this.getUserByPhoneNumber(phoneNumber);
+        return !!user;
+      }
+    } catch (error) {
+      console.error('Error checking user existence:', error);
+      return false;
+    }
   }
 
   /**
