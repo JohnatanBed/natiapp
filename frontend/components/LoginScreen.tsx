@@ -7,7 +7,7 @@ import {
   KeyboardAvoidingView,
   Image,
 } from 'react-native';
-import { loginStyles } from '../styles';
+import { loginStyles } from '../styles/LoginScreen';
 import { userManagementService } from '../services';
 
 interface LoginScreenProps {
@@ -25,6 +25,7 @@ const LoginScreen = ({ onLoginSuccess, onNavigateToSignup, onNavigateToAdminLogi
   const [messageType, setMessageType] = useState<'error' | 'success' | 'info' | ''>('');
   const [_canResend, setCanResend] = useState(false);
   const [_resendTimer, setResendTimer] = useState(60);
+  const [isVerifyingNumber, setIsVerifyingNumber] = useState(false);
   const timerRef = useRef<number | null>(null);
 
   const codeInputRefs = [
@@ -87,14 +88,39 @@ const LoginScreen = ({ onLoginSuccess, onNavigateToSignup, onNavigateToAdminLogi
       setMessageType('error');
       return;
     }
-
-    setCurrentStep(2);
-    setMessage('');
-    setMessageType('');
     
-    // Limpiar timer anterior si existe
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
+    try {
+      setIsVerifyingNumber(true);
+      setMessage('Verificando número de teléfono...');
+      setMessageType('info');
+      
+      // Verificar si el usuario existe en la base de datos
+      const checkResult = await userManagementService.checkUserExists(phoneNumber);
+      
+      if (checkResult.success && checkResult.exists) {
+        // El usuario existe, podemos continuar al paso de ingresar clave
+        setMessage('');
+        setMessageType('');
+        setCurrentStep(2);
+        
+        // Limpiar timer anterior si existe
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+        }
+      } else {
+        // El usuario no existe
+        setMessage('El número no está registrado. Por favor regístrate primero.');
+        setMessageType('error');
+        setIsVerifyingNumber(false);
+        return;
+      }
+    } catch (error) {
+      setMessage('Error al verificar el número. Intente nuevamente.');
+      setMessageType('error');
+      setIsVerifyingNumber(false);
+      return;
+    } finally {
+      setIsVerifyingNumber(false);
     }
     
     // Iniciar timer para reenvío
@@ -231,10 +257,11 @@ const LoginScreen = ({ onLoginSuccess, onNavigateToSignup, onNavigateToAdminLogi
               </View>
 
               <TouchableOpacity 
-                style={loginStyles.button}
-                onPress={handleNext}>
+                style={[loginStyles.button, isVerifyingNumber && loginStyles.disabledButton]}
+                onPress={handleNext}
+                disabled={isVerifyingNumber}>
                 <Text style={loginStyles.buttonText}>
-                  Ingresa
+                  {isVerifyingNumber ? 'Verificando...' : 'Ingresa'}
                 </Text>
               </TouchableOpacity>
 

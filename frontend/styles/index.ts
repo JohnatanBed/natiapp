@@ -1,5 +1,5 @@
 // Exportar todos los estilos desde un solo lugar
-export { loginStyles } from './LoginScreen.styles';
-export { signupStyles } from './SignupScreen.styles';
-export { homeStyles } from './HomeScreen.styles';
-export { globalStyles, colors, fontSizes, spacing, borders } from './global.styles';
+export { loginStyles } from './LoginScreen';
+export { signupStyles } from './SignupScreen';
+export { homeStyles } from './HomeScreen';
+export { globalStyles, colors, fontSizes, spacing, borders } from './global';

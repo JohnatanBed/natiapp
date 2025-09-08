@@ -34,6 +34,17 @@ export interface UserLoginResponse {
   token?: string;
 }
 
+export interface CheckUserResponse {
+  success: boolean;
+  exists: boolean;
+  message: string;
+  user?: {
+    id: string;
+    phoneNumber: string;
+  };
+  error?: string;
+}
+
 export interface AdminLoginResponse {
   success: boolean;
   message: string;
@@ -129,6 +140,55 @@ class UserManagementService {
    * @param password - User's password
    * @returns Promise with login response
    */
+  /**
+   * Check if user exists by phone number
+   * @param phoneNumber - User's phone number
+   * @returns Promise with check result
+   */
+  async checkUserExists(phoneNumber: string): Promise<CheckUserResponse> {
+    try {
+      if (this.isDevelopment) {
+        // Mock user check for development
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            const user = this.users.get(phoneNumber);
+            if (user) {
+              resolve({
+                success: true,
+                exists: true,
+                message: 'Usuario encontrado',
+                user: {
+                  id: user.id,
+                  phoneNumber: user.phoneNumber
+                }
+              });
+            } else {
+              resolve({
+                success: true,
+                exists: false,
+                message: 'Usuario no encontrado'
+              });
+            }
+          }, 300);
+        });
+      } else {
+        // Use the real backend API
+        const response = await apiService.post<CheckUserResponse>('/auth/check-user', {
+          phoneNumber
+        });
+        
+        return response;
+      }
+    } catch (error) {
+      return {
+        success: false,
+        exists: false,
+        message: 'Error al verificar usuario',
+        error: error instanceof Error ? error.message : 'Check user failed'
+      };
+    }
+  }
+
   async loginUser(phoneNumber: string, password: string = "default123"): Promise<UserLoginResponse> {
     try {
       if (this.isDevelopment) {

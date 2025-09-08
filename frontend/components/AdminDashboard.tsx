@@ -9,7 +9,7 @@ import {
   RefreshControl,
   StyleSheet,
 } from 'react-native';
-import { homeStyles } from '../styles';
+import { homeStyles } from '../styles/HomeScreen';
 import { User, userManagementService } from '../services';
 
 interface AdminDashboardProps {

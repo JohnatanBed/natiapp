@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
   StyleSheet,
 } from 'react-native';
-import { loginStyles } from '../styles';
+import { loginStyles } from '../styles/LoginScreen';
 import { userManagementService } from '../services';
 
 interface AdminLoginScreenProps {

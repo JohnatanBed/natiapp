@@ -5,8 +5,7 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
-import { homeStyles } from '../styles';
-import ApiConnectionTester from './ApiConnectionTester';
+import { homeStyles } from '../styles/HomeScreen';
 
 interface HomeScreenProps {
   phoneNumber: string;
@@ -16,7 +15,6 @@ interface HomeScreenProps {
 const HomeScreen = ({ phoneNumber, onLogout }: HomeScreenProps) => {
   const [message, setMessage] = useState('');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [showApiTester, setShowApiTester] = useState(false);
 
   const handleLogout = () => {
     setShowLogoutConfirm(true);
@@ -32,12 +30,8 @@ const HomeScreen = ({ phoneNumber, onLogout }: HomeScreenProps) => {
   };
 
   const handleMenuOption = (option: string) => {
-    if (option === 'TestAPI') {
-      setShowApiTester(true);
-    } else {
-      setMessage(`Has seleccionado: ${option}`);
-      setTimeout(() => setMessage(''), 3000);
-    }
+    setMessage(`Has seleccionado: ${option}`);
+    setTimeout(() => setMessage(''), 3000);
   };
 
   return (
@@ -79,7 +73,7 @@ const HomeScreen = ({ phoneNumber, onLogout }: HomeScreenProps) => {
           </View>
         )}
         
-        {message !== '' && !showLogoutConfirm && !showApiTester && (
+        {message !== '' && !showLogoutConfirm && (
           <View style={homeStyles.messageContainer}>
             <Text style={homeStyles.messageText}>
               {message}
@@ -87,35 +81,19 @@ const HomeScreen = ({ phoneNumber, onLogout }: HomeScreenProps) => {
           </View>
         )}
         
-        {showApiTester ? (
-          <View>
-            <View style={{flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15, alignItems: 'center'}}>
-              <Text style={{fontSize: 18, fontWeight: 'bold'}}>Prueba de API</Text>
-              <TouchableOpacity 
-                onPress={() => setShowApiTester(false)}
-                style={{paddingHorizontal: 12, paddingVertical: 6, backgroundColor: '#4b5563', borderRadius: 4}}>
-                <Text style={{color: 'white'}}>Volver</Text>
-              </TouchableOpacity>
-            </View>
-            <ApiConnectionTester />
-          </View>
-        ) : null}
+        <Text style={homeStyles.menuTitle}>
+          Menú Principal
+        </Text>
         
-        {!showApiTester && (
-          <>
-            <Text style={homeStyles.menuTitle}>
-              Menú Principal
+        <View style={homeStyles.menuGrid}>
+          <TouchableOpacity 
+            style={homeStyles.menuItem}
+            onPress={() => handleMenuOption('Perfil')}>
+            <Text style={homeStyles.menuEmoji}>👤</Text>
+            <Text style={homeStyles.menuItemText}>
+              Mi Perfil
             </Text>
-            
-            <View style={homeStyles.menuGrid}>
-              <TouchableOpacity 
-                style={homeStyles.menuItem}
-                onPress={() => handleMenuOption('Perfil')}>
-                <Text style={homeStyles.menuEmoji}>👤</Text>
-                <Text style={homeStyles.menuItemText}>
-                  Mi Perfil
-                </Text>
-              </TouchableOpacity>
+          </TouchableOpacity>
 
           <TouchableOpacity 
             style={homeStyles.menuItem}
@@ -161,15 +139,6 @@ const HomeScreen = ({ phoneNumber, onLogout }: HomeScreenProps) => {
               Favoritos
             </Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[homeStyles.menuItem, { backgroundColor: '#e6f7ff' }]}
-            onPress={() => handleMenuOption('TestAPI')}>
-            <Text style={homeStyles.menuEmoji}>🔌</Text>
-            <Text style={homeStyles.menuItemText}>
-              Probar API
-            </Text>
-          </TouchableOpacity>
         </View>
 
         <View style={homeStyles.infoCard}>
@@ -183,8 +152,6 @@ const HomeScreen = ({ phoneNumber, onLogout }: HomeScreenProps) => {
             Última actualización: Hoy
           </Text>
         </View>
-        </>
-        )}
       </View>
     </ScrollView>
   );

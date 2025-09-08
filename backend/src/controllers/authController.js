@@ -1,5 +1,4 @@
 const User = require('../models/User');
-const Admin = require('../models/Admin');
 const jwt = require('jsonwebtoken');
 
 // Helper function to generate JWT token
@@ -14,7 +13,23 @@ const generateToken = (id) => {
 // @access  Public
 exports.register = async (req, res, next) => {
   try {
-    const { name, phoneNumber, password } = req.body;
+    let { name, phoneNumber, password } = req.body;
+    
+    // Asegurar que password sea un string
+    password = String(password);
+    
+    // Eliminar espacios en blanco
+    password = password.trim();
+    
+    // Verificar si la contraseña contiene exactamente 4 dígitos
+    const passwordRegex = /^\d{4}$/;
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({
+        success: false,
+        message: 'La contraseña debe ser de 4 dígitos exactamente',
+        error: 'Password must be exactly 4 digits'
+      });
+    }
     
     // Check if user with phoneNumber already exists
     const userExists = await User.findOne({ phoneNumber });
@@ -35,13 +50,13 @@ exports.register = async (req, res, next) => {
     });
     
     // Create and return JWT token
-    const token = generateToken(user._id);
+    const token = generateToken(user.id);
     
     res.status(201).json({
       success: true,
       message: 'Usuario registrado exitosamente',
       user: {
-        id: user._id,
+        id: user.id,
         name: user.name,
         phoneNumber: user.phoneNumber,
         isActive: user.isActive,
@@ -59,10 +74,26 @@ exports.register = async (req, res, next) => {
 // @access  Public
 exports.login = async (req, res, next) => {
   try {
-    const { phoneNumber, password } = req.body;
+    let { phoneNumber, password } = req.body;
+    
+    // Asegurar que password sea un string
+    password = String(password);
+    
+    // Eliminar espacios en blanco
+    password = password.trim();
+    
+    // Validate password is exactly 4 digits
+    const passwordRegex = /^\d{4}$/;
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({
+        success: false,
+        message: 'La contraseña debe ser de 4 dígitos exactamente',
+        error: 'Password must be exactly 4 digits'
+      });
+    }
     
     // Check if user exists
-    const user = await User.findOne({ phoneNumber }).select('+password');
+    const user = await User.findOne({ phoneNumber });
     
     if (!user) {
       return res.status(401).json({
@@ -73,7 +104,7 @@ exports.login = async (req, res, next) => {
     }
     
     // Check if password matches
-    const isMatch = await user.matchPassword(password);
+    const isMatch = await User.matchPassword(user.id, password);
     
     if (!isMatch) {
       return res.status(401).json({
@@ -83,23 +114,17 @@ exports.login = async (req, res, next) => {
       });
     }
     
-    // Update last login
-    user.lastLogin = new Date();
-    await user.save();
-    
     // Create and return JWT token
-    const token = generateToken(user._id);
+    const token = generateToken(user.id);
     
     res.status(200).json({
       success: true,
       message: 'Login exitoso',
       user: {
-        id: user._id,
+        id: user.id,
         name: user.name,
         phoneNumber: user.phoneNumber,
-        isActive: user.isActive,
         registeredAt: user.registeredAt,
-        lastLogin: user.lastLogin
       },
       token
     });
@@ -115,11 +140,22 @@ exports.adminLogin = async (req, res, next) => {
   try {
     const { email, password } = req.body;
     
+    // Para administradores, permitimos contraseñas más complejas (no hay restricción de 4 dígitos)
+    // Si quisieras aplicar la misma restricción, descomenta el código a continuación
+    /*
+    const passwordRegex = /^\d{4}$/;
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({
+        success: false,
+        message: 'La contraseña debe ser de 4 dígitos exactamente',
+        error: 'Password must be exactly 4 digits'
+      });
+    }
+    */
+    
     // Use the Admin model to find the admin by email
     const Admin = require('../models/Admin');
-    const admin = await Admin.findOne({ 
-      email
-    }).select('+password');
+    const admin = await Admin.findOne({ email });
     
     if (!admin) {
       return res.status(401).json({
@@ -130,7 +166,7 @@ exports.adminLogin = async (req, res, next) => {
     }
     
     // Check if password matches
-    const isMatch = await admin.matchPassword(password);
+    const isMatch = await Admin.matchPassword(admin.id, password);
     
     if (!isMatch) {
       return res.status(401).json({
@@ -139,10 +175,6 @@ exports.adminLogin = async (req, res, next) => {
         error: 'Invalid credentials'
       });
     }
-    
-    // Update last login
-    admin.lastLogin = new Date();
-    await admin.save();
     
     // Create and return JWT token
     const token = generateToken(admin._id);
@@ -158,6 +190,31 @@ exports.adminLogin = async (req, res, next) => {
         permissions: admin.permissions
       },
       token
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Check if user exists by phone number
+// @route   POST /api/auth/check-user
+// @access  Public
+exports.checkUser = async (req, res, next) => {
+  try {
+    const { phoneNumber } = req.body;
+    
+    // Check if user exists
+    const user = await User.findOne({ phoneNumber });
+    
+    res.status(200).json({
+      success: true,
+      exists: !!user, // Convert to boolean
+      message: user ? 'Usuario encontrado' : 'Usuario no encontrado',
+      // Only return minimal info if user exists
+      user: user ? { 
+        id: user._id,
+        phoneNumber: user.phoneNumber
+      } : null
     });
   } catch (error) {
     next(error);
@@ -183,7 +240,6 @@ exports.getMe = async (req, res, next) => {
           role: admin.role,
           permissions: admin.permissions,
           registeredAt: admin.registeredAt,
-          lastLogin: admin.lastLogin
         }
       });
     }
@@ -198,9 +254,7 @@ exports.getMe = async (req, res, next) => {
         id: user._id,
         name: user.name,
         phoneNumber: user.phoneNumber,
-        isActive: user.isActive,
         registeredAt: user.registeredAt,
-        lastLogin: user.lastLogin,
         role: user.role
       }
     });

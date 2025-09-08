@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
 } from 'react-native';
-import { signupStyles } from '../styles';
+import { signupStyles } from '../styles/SignupScreen';
 import { userManagementService, smsAuthService } from '../services';
 
 interface SignupScreenProps {

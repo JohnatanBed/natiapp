@@ -1,6 +1,5 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const Admin = require('../models/Admin');
 
 // Protect routes - middleware to check if user is authenticated
 exports.protect = async (req, res, next) => {
@@ -27,24 +26,23 @@ exports.protect = async (req, res, next) => {
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
-    // Try to find a regular user first
+    // Find user by id
     req.user = await User.findById(decoded.id);
     
-    // If not a regular user, check if it's an admin
-    if (!req.user) {
-      req.user = await Admin.findById(decoded.id);
-      
-      // If found an admin, mark the request as admin
-      if (req.user) {
-        req.isAdmin = true;
-      }
-    }
-    
-    // If no user or admin found
+    // If no user found
     if (!req.user) {
       return res.status(401).json({
         success: false,
         error: 'User not found with this ID'
+      });
+    }
+    
+    // Check if user is active
+    if (!req.user.isActive) {
+      return res.status(401).json({
+        success: false,
+        message: 'Su cuenta ha sido desactivada',
+        error: 'Account has been deactivated'
       });
     }
     

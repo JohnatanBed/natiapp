@@ -8,18 +8,42 @@ class ApiService {
   // 2. Emulador Android: 'http://10.0.2.2:5000/api'
   // 3. IP de tu máquina (para dispositivos reales): 'http://192.168.1.XX:5000/api'
   // IMPORTANTE: Para dispositivos físicos, cambia esta URL a la IP de tu máquina
-  private baseURL: string = 'http://192.168.1.11:5000/api'; // Configurado para dispositivo físico
+  private baseURL: string = 'http://192.168.1.8:5000/api'; // Configurado para emulador por defecto
+  
+  constructor() {
+    // Intenta cargar la URL base guardada en AsyncStorage al inicializar
+    this.loadSavedBaseURL();
+  }
+  
+  // Cargar URL base guardada anteriormente
+  private async loadSavedBaseURL(): Promise<void> {
+    try {
+      const savedURL = await AsyncStorage.getItem('api_base_url');
+      if (savedURL) {
+        this.setBaseURL(savedURL);
+      }
+    } catch (error) {
+      console.error('Error loading saved API URL:', error);
+    }
+  }
   private token: string | null = null;
   
   // Método para cambiar la URL base en tiempo de ejecución
-  public setBaseURL(url: string): void {
+  public async setBaseURL(url: string): Promise<void> {
     if (!url.endsWith('/api')) {
       // Asegurarnos de que la URL termine con /api
       this.baseURL = url.endsWith('/') ? `${url}api` : `${url}/api`;
     } else {
       this.baseURL = url;
     }
-    console.log(`API base URL actualizada a: ${this.baseURL}`);
+    
+    // Guardar la URL base en AsyncStorage para uso futuro
+    try {
+      await AsyncStorage.setItem('api_base_url', url);
+      console.log(`API base URL actualizada y guardada: ${this.baseURL}`);
+    } catch (error) {
+      console.error('Error guardando API URL en AsyncStorage:', error);
+    }
   }
   
   // Método para obtener la URL base actual
