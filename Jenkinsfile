@@ -1,22 +1,12 @@
 pipeline {
     agent any
     
-    // Especificar que use la rama main
-    options {
-        gitLabConnection('origin')
-        skipDefaultCheckout(true)
-    }
-    
     stages {
-        // Paso 1: Obtener el código de la rama main
+        // Paso 1: Obtener el código
         stage('Descargar Código') {
             steps {
-                echo 'Descargando código desde Git (rama main)...'
-                checkout([
-                    $class: 'GitSCM',
-                    branches: [[name: '*/main']],
-                    userRemoteConfigs: scm.userRemoteConfigs
-                ])
+                echo 'Descargando código desde Git...'
+                checkout scm
             }
         }
         
