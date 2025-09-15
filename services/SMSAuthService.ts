@@ -6,6 +6,7 @@ export interface SMSResponse {
   message: string;
   sessionId?: string;
   error?: string;
+  generatedCode?: string; // The generated verification code for auto-completion
 }
 
 export interface VerificationResponse {
@@ -39,11 +40,20 @@ class SMSAuthService {
    */
   async sendVerificationCode(phoneNumber: string): Promise<SMSResponse> {
     try {
+      // Validate input parameters
+      if (!phoneNumber?.trim()) {
+        return {
+          success: false,
+          message: 'El número de teléfono es requerido',
+          error: 'INVALID_PHONE'
+        };
+      }
+
       // Validate phone number format
       if (!this.isValidPhoneNumber(phoneNumber)) {
         return {
           success: false,
-          message: 'Número de teléfono inválido',
+          message: 'Número de teléfono inválido. Debe ser un número de 10 dígitos que comience con 3.',
           error: 'INVALID_PHONE_NUMBER'
         };
       }
@@ -61,28 +71,73 @@ class SMSAuthService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          phoneNumber: phoneNumber, // Now sending 10-digit format
+          phoneNumber: phoneNumber.trim(), // Now sending 10-digit format
           countryCode: '+57', // Colombia (implicit for all numbers)
         }),
       });
 
-      const data = await response.json();
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        
+        if (response.status === 429) {
+          return {
+            success: false,
+            message: 'Has enviado demasiados códigos. Espera unos minutos antes de intentar nuevamente.',
+            error: 'RATE_LIMIT_EXCEEDED'
+          };
+        }
 
-      if (response.ok) {
-        return {
-          success: true,
-          message: 'Código enviado exitosamente',
-          sessionId: data.sessionId,
-        };
-      } else {
+        if (response.status === 400) {
+          return {
+            success: false,
+            message: errorData.message || 'Número de teléfono inválido',
+            error: 'INVALID_REQUEST'
+          };
+        }
+
+        if (response.status >= 500) {
+          return {
+            success: false,
+            message: 'Error interno del servidor. Intenta más tarde.',
+            error: 'SERVER_ERROR'
+          };
+        }
+
         return {
           success: false,
-          message: data.message || 'Error al enviar SMS',
-          error: data.error,
+          message: errorData.message || 'Error al enviar SMS',
+          error: errorData.error || 'SMS_SEND_FAILED',
         };
       }
+
+      const data = await response.json();
+      return {
+        success: true,
+        message: 'Código enviado exitosamente',
+        sessionId: data.sessionId,
+        generatedCode: data.generatedCode, // Include the generated code from backend
+      };
+
     } catch (error) {
-      console.error('Error sending SMS:', error);
+      console.error('[SMS Service] Error sending SMS:', error);
+      
+      // Handle specific error types
+      if (error instanceof TypeError && error.message.includes('Network request failed')) {
+        return {
+          success: false,
+          message: 'Error de conexión. Verifica tu conexión a internet.',
+          error: 'NETWORK_ERROR',
+        };
+      }
+
+      if (error instanceof Error && error.message.includes('timeout')) {
+        return {
+          success: false,
+          message: 'El servidor está tardando en responder. Intenta nuevamente.',
+          error: 'TIMEOUT_ERROR',
+        };
+      }
+
       return {
         success: false,
         message: 'Error de conexión. Inténtalo de nuevo.',
@@ -100,6 +155,34 @@ class SMSAuthService {
    */
   async verifyCode(phoneNumber: string, code: string, sessionId?: string): Promise<VerificationResponse> {
     try {
+      // Validate input parameters
+      if (!phoneNumber?.trim()) {
+        return {
+          success: false,
+          message: 'El número de teléfono es requerido',
+          isValid: false,
+          error: 'INVALID_PHONE'
+        };
+      }
+
+      if (!code?.trim()) {
+        return {
+          success: false,
+          message: 'El código de verificación es requerido',
+          isValid: false,
+          error: 'INVALID_CODE'
+        };
+      }
+
+      if (code.length !== 4 || !/^\d{4}$/.test(code)) {
+        return {
+          success: false,
+          message: 'El código debe tener exactamente 4 dígitos',
+          isValid: false,
+          error: 'INVALID_CODE_FORMAT'
+        };
+      }
+
       // For development/testing
       if (this.isDevMode()) {
         console.log('[SMS Service] Using development mode - simulating code verification');
@@ -113,30 +196,88 @@ class SMSAuthService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          phoneNumber: phoneNumber,
-          code: code,
+          phoneNumber: phoneNumber.trim(),
+          code: code.trim(),
           sessionId: sessionId,
         }),
       });
 
-      const data = await response.json();
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        
+        if (response.status === 400) {
+          return {
+            success: false,
+            message: 'Código de verificación incorrecto',
+            isValid: false,
+            error: 'INVALID_CODE'
+          };
+        }
 
-      if (response.ok) {
-        return {
-          success: true,
-          message: 'Código verificado correctamente',
-          isValid: data.isValid,
-        };
-      } else {
+        if (response.status === 404) {
+          return {
+            success: false,
+            message: 'Sesión de verificación no encontrada o expirada',
+            isValid: false,
+            error: 'SESSION_NOT_FOUND'
+          };
+        }
+
+        if (response.status === 429) {
+          return {
+            success: false,
+            message: 'Demasiados intentos fallidos. Espera antes de intentar nuevamente.',
+            isValid: false,
+            error: 'TOO_MANY_ATTEMPTS'
+          };
+        }
+
+        if (response.status >= 500) {
+          return {
+            success: false,
+            message: 'Error interno del servidor. Intenta más tarde.',
+            isValid: false,
+            error: 'SERVER_ERROR'
+          };
+        }
+
         return {
           success: false,
-          message: data.message || 'Error al verificar código',
+          message: errorData.message || 'Error al verificar código',
           isValid: false,
-          error: data.error,
+          error: errorData.error || 'VERIFICATION_FAILED',
         };
       }
+
+      const data = await response.json();
+      return {
+        success: true,
+        message: 'Código verificado correctamente',
+        isValid: data.isValid,
+      };
+
     } catch (error) {
-      console.error('Error verifying code:', error);
+      console.error('[SMS Service] Error verifying code:', error);
+      
+      // Handle specific error types
+      if (error instanceof TypeError && error.message.includes('Network request failed')) {
+        return {
+          success: false,
+          message: 'Error de conexión. Verifica tu conexión a internet.',
+          isValid: false,
+          error: 'NETWORK_ERROR',
+        };
+      }
+
+      if (error instanceof Error && error.message.includes('timeout')) {
+        return {
+          success: false,
+          message: 'El servidor está tardando en responder. Intenta nuevamente.',
+          isValid: false,
+          error: 'TIMEOUT_ERROR',
+        };
+      }
+
       return {
         success: false,
         message: 'Error de conexión. Inténtalo de nuevo.',
@@ -210,6 +351,7 @@ class SMSAuthService {
           success: true,
           message: 'Código enviado exitosamente',
           sessionId: sessionId,
+          generatedCode: code, // Include generated code in development mode
         });
       }, 1000); // Simulate network delay
     });

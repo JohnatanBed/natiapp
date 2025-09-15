@@ -117,17 +117,51 @@ class UserManagementService {
    */
   async registerUser(name: string, phoneNumber: string, password: string = "default123"): Promise<UserRegistrationResponse> {
     try {
+      // Validate input parameters
+      if (!name?.trim()) {
+        return {
+          success: false,
+          message: 'El nombre es requerido',
+          error: 'INVALID_NAME'
+        };
+      }
+
+      if (!phoneNumber?.trim()) {
+        return {
+          success: false,
+          message: 'El número de teléfono es requerido',
+          error: 'INVALID_PHONE'
+        };
+      }
+
+      if (!password?.trim()) {
+        return {
+          success: false,
+          message: 'La contraseña es requerida',
+          error: 'INVALID_PASSWORD'
+        };
+      }
+
       // Normalize phone number for consistency
       const normalizedPhone = this.normalizePhoneNumber(phoneNumber);
       console.log('[UserManagementService] Registering user with normalized phone:', normalizedPhone, 'original:', phoneNumber);
       
+      // Additional phone validation
+      if (normalizedPhone.length !== 10 || !normalizedPhone.startsWith('3')) {
+        return {
+          success: false,
+          message: 'El número de celular debe ser válido (10 dígitos, comenzando con 3)',
+          error: 'INVALID_PHONE_FORMAT'
+        };
+      }
+
       if (this.isDevelopment) {
         // In development, simulate API call
         return new Promise((resolve) => {
           setTimeout(() => {
             const user: User = {
               id: `user_${Date.now()}`,
-              name,
+              name: name.trim(),
               phoneNumber: normalizedPhone,
               isActive: true,
               registeredAt: new Date(),
@@ -145,7 +179,7 @@ class UserManagementService {
       } else {
         // Use the real backend API
         const response = await apiService.post<UserRegistrationResponse>('/auth/register', {
-          name,
+          name: name.trim(),
           phoneNumber: normalizedPhone,
           password
         });
@@ -158,9 +192,28 @@ class UserManagementService {
         return response;
       }
     } catch (error) {
+      console.error('[UserManagementService] Registration error:', error);
+      
+      // Handle specific error types
+      if (error instanceof TypeError && error.message.includes('Network request failed')) {
+        return {
+          success: false,
+          message: 'Error de conexión. Verifica tu conexión a internet.',
+          error: 'NETWORK_ERROR'
+        };
+      }
+
+      if (error instanceof Error && error.message.includes('timeout')) {
+        return {
+          success: false,
+          message: 'El servidor está tardando en responder. Intenta nuevamente.',
+          error: 'TIMEOUT_ERROR'
+        };
+      }
+
       return {
         success: false,
-        message: 'Error al registrar usuario',
+        message: 'Error al registrar usuario. Intenta nuevamente.',
         error: error instanceof Error ? error.message : 'Registration failed'
       };
     }
@@ -179,30 +232,60 @@ class UserManagementService {
    */
   async checkUserExists(phoneNumber: string): Promise<CheckUserResponse> {
     try {
+      // Validate input parameters
+      if (!phoneNumber?.trim()) {
+        return {
+          success: false,
+          exists: false,
+          message: 'El número de teléfono es requerido',
+          error: 'INVALID_PHONE'
+        };
+      }
+
       // Normalize phone number for consistency
       const normalizedPhone = this.normalizePhoneNumber(phoneNumber);
       console.log('[UserManagementService] Checking user existence for normalized phone:', normalizedPhone, 'original:', phoneNumber);
       
+      // Additional phone validation
+      if (normalizedPhone.length !== 10 || !normalizedPhone.startsWith('3')) {
+        return {
+          success: false,
+          exists: false,
+          message: 'El número de celular debe ser válido (10 dígitos, comenzando con 3)',
+          error: 'INVALID_PHONE_FORMAT'
+        };
+      }
+
       if (this.isDevelopment) {
         // Mock user check for development
         return new Promise((resolve) => {
           setTimeout(() => {
-            const user = this.users.get(normalizedPhone);
-            if (user) {
+            try {
+              const user = this.users.get(normalizedPhone);
+              if (user) {
+                resolve({
+                  success: true,
+                  exists: true,
+                  message: 'Usuario encontrado',
+                  user: {
+                    id: user.id,
+                    phoneNumber: user.phoneNumber
+                  }
+                });
+              } else {
+                resolve({
+                  success: true,
+                  exists: false,
+                  message: 'Usuario no encontrado'
+                });
+              }
+            } catch (devError) {
+              console.error('[UserManagementService] Development mode error:', devError);
               resolve({
-                success: true,
-                exists: true,
-                message: 'Usuario encontrado',
-                user: {
-                  id: user.id,
-                  phoneNumber: user.phoneNumber
-                }
-              });
-            } else {
-              resolve({
-                success: true,
+                success: false,
                 exists: false,
-                message: 'Usuario no encontrado'
+                message: 'Error interno del sistema',
+                error: 'DEVELOPMENT_ERROR'
               });
             }
           }, 300);
@@ -223,7 +306,7 @@ class UserManagementService {
             success: false,
             exists: false,
             message: 'Error en la respuesta del servidor',
-            error: 'Invalid response structure'
+            error: 'INVALID_RESPONSE'
           };
         }
         
@@ -231,10 +314,39 @@ class UserManagementService {
       }
     } catch (error) {
       console.error('[UserManagementService] Error checking user existence:', error);
+      
+      // Handle specific error types
+      if (error instanceof TypeError && error.message.includes('Network request failed')) {
+        return {
+          success: false,
+          exists: false,
+          message: 'Error de conexión. Verifica tu conexión a internet.',
+          error: 'NETWORK_ERROR'
+        };
+      }
+
+      if (error instanceof Error && error.message.includes('timeout')) {
+        return {
+          success: false,
+          exists: false,
+          message: 'El servidor está tardando en responder. Intenta nuevamente.',
+          error: 'TIMEOUT_ERROR'
+        };
+      }
+
+      if (error instanceof Error && error.message.includes('500')) {
+        return {
+          success: false,
+          exists: false,
+          message: 'Error interno del servidor. Intenta más tarde.',
+          error: 'SERVER_ERROR'
+        };
+      }
+
       return {
         success: false,
         exists: false,
-        message: 'Error al verificar usuario',
+        message: 'Error al verificar usuario. Intenta nuevamente.',
         error: error instanceof Error ? error.message : 'Check user failed'
       };
     }
@@ -242,29 +354,64 @@ class UserManagementService {
 
   async loginUser(phoneNumber: string, password: string = "default123"): Promise<UserLoginResponse> {
     try {
+      // Validate input parameters
+      if (!phoneNumber?.trim()) {
+        return {
+          success: false,
+          message: 'El número de teléfono es requerido',
+          error: 'INVALID_PHONE'
+        };
+      }
+
+      if (!password?.trim()) {
+        return {
+          success: false,
+          message: 'La contraseña es requerida',
+          error: 'INVALID_PASSWORD'
+        };
+      }
+
       // Normalize phone number for consistency
       const normalizedPhone = this.normalizePhoneNumber(phoneNumber);
       console.log('[UserManagementService] Login attempt with normalized phone:', normalizedPhone, 'original:', phoneNumber);
       
+      // Additional phone validation
+      if (normalizedPhone.length !== 10 || !normalizedPhone.startsWith('3')) {
+        return {
+          success: false,
+          message: 'El número de celular debe ser válido (10 dígitos, comenzando con 3)',
+          error: 'INVALID_PHONE_FORMAT'
+        };
+      }
+
       if (this.isDevelopment) {
         // Mock login for development
         return new Promise((resolve) => {
           setTimeout(() => {
-            const user = this.users.get(normalizedPhone);
-            if (user) {
-              user.lastLogin = new Date();
-              this.users.set(normalizedPhone, user);
-              
-              resolve({
-                success: true,
-                message: 'Login exitoso',
-                user
-              });
-            } else {
+            try {
+              const user = this.users.get(normalizedPhone);
+              if (user) {
+                user.lastLogin = new Date();
+                this.users.set(normalizedPhone, user);
+                
+                resolve({
+                  success: true,
+                  message: 'Login exitoso',
+                  user
+                });
+              } else {
+                resolve({
+                  success: false,
+                  message: 'Usuario no encontrado. Verifica tu número o regístrate.',
+                  error: 'USER_NOT_FOUND'
+                });
+              }
+            } catch (devError) {
+              console.error('[UserManagementService] Development mode error:', devError);
               resolve({
                 success: false,
-                message: 'Usuario no encontrado',
-                error: 'User not found'
+                message: 'Error interno del sistema',
+                error: 'DEVELOPMENT_ERROR'
               });
             }
           }, 500);
@@ -273,7 +420,7 @@ class UserManagementService {
         // Use the real backend API
         const response = await apiService.post<UserLoginResponse>('/auth/login', {
           phoneNumber: normalizedPhone,
-          password
+          password: password.trim()
         });
         
         // Store the token if login was successful
@@ -286,9 +433,44 @@ class UserManagementService {
         return response;
       }
     } catch (error) {
+      console.error('[UserManagementService] Login error:', error);
+      
+      // Handle specific error types
+      if (error instanceof TypeError && error.message.includes('Network request failed')) {
+        return {
+          success: false,
+          message: 'Error de conexión. Verifica tu conexión a internet.',
+          error: 'NETWORK_ERROR'
+        };
+      }
+
+      if (error instanceof Error && error.message.includes('timeout')) {
+        return {
+          success: false,
+          message: 'El servidor está tardando en responder. Intenta nuevamente.',
+          error: 'TIMEOUT_ERROR'
+        };
+      }
+
+      if (error instanceof Error && error.message.includes('401')) {
+        return {
+          success: false,
+          message: 'Credenciales incorrectas. Verifica tu número y PIN.',
+          error: 'INVALID_CREDENTIALS'
+        };
+      }
+
+      if (error instanceof Error && error.message.includes('500')) {
+        return {
+          success: false,
+          message: 'Error interno del servidor. Intenta más tarde.',
+          error: 'SERVER_ERROR'
+        };
+      }
+
       return {
         success: false,
-        message: 'Error de autenticación',
+        message: 'Error de autenticación. Intenta nuevamente.',
         error: error instanceof Error ? error.message : 'Login failed'
       };
     }
@@ -334,23 +516,59 @@ class UserManagementService {
    */
   async adminLogin(email: string, password: string): Promise<AdminLoginResponse> {
     try {
+      // Validate input parameters
+      if (!email?.trim()) {
+        return {
+          success: false,
+          message: 'El email es requerido',
+          error: 'INVALID_EMAIL'
+        };
+      }
+
+      if (!password?.trim()) {
+        return {
+          success: false,
+          message: 'La contraseña es requerida',
+          error: 'INVALID_PASSWORD'
+        };
+      }
+
+      // Basic email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return {
+          success: false,
+          message: 'Por favor ingresa un email válido',
+          error: 'INVALID_EMAIL_FORMAT'
+        };
+      }
+
       if (this.isDevelopment) {
         // In development, simulate API call
         return new Promise((resolve) => {
           setTimeout(() => {
-            // Demo credentials
-            if (email === 'admin@natiapp.com' && password === 'admin123') {
-              const admin = this.admins.get(email);
-              resolve({
-                success: true,
-                message: 'Login exitoso',
-                admin
-              });
-            } else {
+            try {
+              // Demo credentials
+              if (email.toLowerCase() === 'admin@natiapp.com' && password === 'admin123') {
+                const admin = this.admins.get(email.toLowerCase());
+                resolve({
+                  success: true,
+                  message: 'Login exitoso',
+                  admin
+                });
+              } else {
+                resolve({
+                  success: false,
+                  message: 'Credenciales incorrectas. Verifica tu email y contraseña.',
+                  error: 'INVALID_CREDENTIALS'
+                });
+              }
+            } catch (devError) {
+              console.error('[UserManagementService] Development mode error:', devError);
               resolve({
                 success: false,
-                message: 'Credenciales incorrectas',
-                error: 'Invalid credentials'
+                message: 'Error interno del sistema',
+                error: 'DEVELOPMENT_ERROR'
               });
             }
           }, 1000);
@@ -358,8 +576,8 @@ class UserManagementService {
       } else {
         // Use the real backend API
         const response = await apiService.post<AdminLoginResponse>('/auth/admin-login', {
-          email,
-          password
+          email: email.trim().toLowerCase(),
+          password: password.trim()
         });
         
         // Store the token if login was successful
@@ -370,10 +588,45 @@ class UserManagementService {
         return response;
       }
     } catch (error) {
+      console.error('[UserManagementService] Admin login error:', error);
+      
+      // Handle specific error types
+      if (error instanceof TypeError && error.message.includes('Network request failed')) {
+        return {
+          success: false,
+          message: 'Error de conexión. Verifica tu conexión a internet.',
+          error: 'NETWORK_ERROR'
+        };
+      }
+
+      if (error instanceof Error && error.message.includes('timeout')) {
+        return {
+          success: false,
+          message: 'El servidor está tardando en responder. Intenta nuevamente.',
+          error: 'TIMEOUT_ERROR'
+        };
+      }
+
+      if (error instanceof Error && error.message.includes('401')) {
+        return {
+          success: false,
+          message: 'Credenciales incorrectas. Verifica tu email y contraseña.',
+          error: 'INVALID_CREDENTIALS'
+        };
+      }
+
+      if (error instanceof Error && error.message.includes('500')) {
+        return {
+          success: false,
+          message: 'Error interno del servidor. Intenta más tarde.',
+          error: 'SERVER_ERROR'
+        };
+      }
+
       return {
         success: false,
-        message: 'Error de conexión',
-        error: error instanceof Error ? error.message : 'Login failed'
+        message: 'Error al iniciar sesión. Intenta nuevamente.',
+        error: error instanceof Error ? error.message : 'Admin login failed'
       };
     }
   }
@@ -388,21 +641,61 @@ class UserManagementService {
         // In development, simulate API call
         return new Promise((resolve) => {
           setTimeout(() => {
-            const users = Array.from(this.users.values());
-            resolve({
-              success: true,
-              users
-            });
+            try {
+              const users = Array.from(this.users.values());
+              resolve({
+                success: true,
+                users
+              });
+            } catch (devError) {
+              console.error('[UserManagementService] Development mode error:', devError);
+              resolve({
+                success: false,
+                error: 'Error interno del sistema'
+              });
+            }
           }, 500);
         });
       } else {
         // Use the real backend API
-        return await apiService.get<UserListResponse>('/users');
+        const response = await apiService.get<UserListResponse>('/users');
+        return response;
       }
     } catch (error) {
+      console.error('[UserManagementService] Error fetching users:', error);
+      
+      // Handle specific error types
+      if (error instanceof TypeError && error.message.includes('Network request failed')) {
+        return {
+          success: false,
+          error: 'Error de conexión. Verifica tu conexión a internet.'
+        };
+      }
+
+      if (error instanceof Error && error.message.includes('timeout')) {
+        return {
+          success: false,
+          error: 'El servidor está tardando en responder. Intenta nuevamente.'
+        };
+      }
+
+      if (error instanceof Error && error.message.includes('403')) {
+        return {
+          success: false,
+          error: 'No tienes permisos para ver esta información.'
+        };
+      }
+
+      if (error instanceof Error && error.message.includes('500')) {
+        return {
+          success: false,
+          error: 'Error interno del servidor. Intenta más tarde.'
+        };
+      }
+
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to fetch users'
+        error: 'Error al obtener usuarios. Intenta nuevamente.'
       };
     }
   }
@@ -414,44 +707,106 @@ class UserManagementService {
    */
   async toggleUserStatus(userId: string): Promise<UserStatusToggleResponse> {
     try {
+      // Validate input parameters
+      if (!userId?.trim()) {
+        return {
+          success: false,
+          message: 'El ID del usuario es requerido',
+          error: 'INVALID_USER_ID'
+        };
+      }
+
       if (this.isDevelopment) {
         // In development, simulate API call
         return new Promise((resolve) => {
           setTimeout(() => {
-            // Find user by ID
-            let foundUser: User | undefined;
-            for (const user of this.users.values()) {
-              if (user.id === userId) {
-                foundUser = user;
-                break;
+            try {
+              // Find user by ID
+              let foundUser: User | undefined;
+              for (const user of this.users.values()) {
+                if (user.id === userId) {
+                  foundUser = user;
+                  break;
+                }
               }
-            }
 
-            if (foundUser) {
-              foundUser.isActive = !foundUser.isActive;
-              this.users.set(foundUser.phoneNumber, foundUser);
-              
-              resolve({
-                success: true,
-                message: `Usuario ${foundUser.isActive ? 'activado' : 'desactivado'} exitosamente`
-              });
-            } else {
+              if (foundUser) {
+                foundUser.isActive = !foundUser.isActive;
+                this.users.set(foundUser.phoneNumber, foundUser);
+                
+                resolve({
+                  success: true,
+                  message: `Usuario ${foundUser.isActive ? 'activado' : 'desactivado'} exitosamente`
+                });
+              } else {
+                resolve({
+                  success: false,
+                  message: 'Usuario no encontrado',
+                  error: 'USER_NOT_FOUND'
+                });
+              }
+            } catch (devError) {
+              console.error('[UserManagementService] Development mode error:', devError);
               resolve({
                 success: false,
-                message: 'Usuario no encontrado',
-                error: 'User not found'
+                message: 'Error interno del sistema',
+                error: 'DEVELOPMENT_ERROR'
               });
             }
           }, 500);
         });
       } else {
         // Use the real backend API
-        return await apiService.put<UserStatusToggleResponse>(`/users/${userId}/status`, {});
+        const response = await apiService.put<UserStatusToggleResponse>(`/users/${userId}/status`, {});
+        return response;
       }
     } catch (error) {
+      console.error('[UserManagementService] Error toggling user status:', error);
+      
+      // Handle specific error types
+      if (error instanceof TypeError && error.message.includes('Network request failed')) {
+        return {
+          success: false,
+          message: 'Error de conexión. Verifica tu conexión a internet.',
+          error: 'NETWORK_ERROR'
+        };
+      }
+
+      if (error instanceof Error && error.message.includes('timeout')) {
+        return {
+          success: false,
+          message: 'El servidor está tardando en responder. Intenta nuevamente.',
+          error: 'TIMEOUT_ERROR'
+        };
+      }
+
+      if (error instanceof Error && error.message.includes('404')) {
+        return {
+          success: false,
+          message: 'Usuario no encontrado.',
+          error: 'USER_NOT_FOUND'
+        };
+      }
+
+      if (error instanceof Error && error.message.includes('403')) {
+        return {
+          success: false,
+          message: 'No tienes permisos para realizar esta acción.',
+          error: 'FORBIDDEN'
+        };
+      }
+
+      if (error instanceof Error && error.message.includes('500')) {
+        return {
+          success: false,
+          message: 'Error interno del servidor. Intenta más tarde.',
+          error: 'SERVER_ERROR'
+        };
+      }
+
       return {
         success: false,
-        message: 'Error al cambiar estado del usuario',
+        message: 'Error al cambiar estado del usuario. Intenta nuevamente.',
         error: error instanceof Error ? error.message : 'Toggle status failed'
       };
     }

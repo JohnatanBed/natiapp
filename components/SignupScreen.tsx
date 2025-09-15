@@ -181,27 +181,77 @@ const SignupScreen = ({ onSignupSuccess, onBackToLogin }: SignupScreenProps) => 
     }
   };
 
+  // Función para autocompletar el código de verificación
+  const autoCompleteVerificationCode = (code: string) => {
+    if (code && code.length === 4) {
+      console.log('[Signup] Auto-completing verification code:', code);
+      
+      // Llenar el código automáticamente
+      setCode(code);
+      
+      // Mostrar cada dígito en su respectivo campo
+      const codeArray = code.split('');
+      setShowCode([codeArray[0], codeArray[1], codeArray[2], codeArray[3]]);
+      
+      // Limpiar el mensaje después de autocompletar
+      setTimeout(() => {
+        setMessage('');
+        setMessageType('');
+      }, 500);
+    }
+  };
+
   const handleNext = async () => {
     console.log('[Signup] Starting registration process...');
     console.log('[Signup] SMS Service Status:', smsAuthService.getServiceStatus());
     
-    // Validate input data
-    if (name.trim().length < 2) {
-      setMessage('Por favor ingresa un nombre válido (mínimo 2 caracteres)');
-      setMessageType('error');
-      return;
-    }
-    if (phoneNumber.length !== 10) {
-      setMessage('El número de celular debe tener exactamente 10 dígitos');
-      setMessageType('error');
-      return;
-    }
-
-    setIsLoading(true);
-    setMessage('Verificando número de celular...');
-    setMessageType('info');
-
     try {
+      // Reset error states
+      setMessage('');
+      setMessageType('');
+
+      // Validate input data
+      if (!name?.trim()) {
+        setMessage('Por favor ingresa tu nombre');
+        setMessageType('error');
+        return;
+      }
+
+      if (name.trim().length < 2) {
+        setMessage('Por favor ingresa un nombre válido (mínimo 2 caracteres)');
+        setMessageType('error');
+        return;
+      }
+
+      if (name.trim().length > 50) {
+        setMessage('El nombre no puede exceder 50 caracteres');
+        setMessageType('error');
+        return;
+      }
+
+      if (!phoneNumber?.trim()) {
+        setMessage('Por favor ingresa tu número de celular');
+        setMessageType('error');
+        return;
+      }
+
+      if (phoneNumber.length !== 10) {
+        setMessage('El número de celular debe tener exactamente 10 dígitos');
+        setMessageType('error');
+        return;
+      }
+
+      // Colombian mobile number validation
+      if (!phoneNumber.startsWith('3')) {
+        setMessage('El número debe ser un celular válido (debe empezar con 3)');
+        setMessageType('error');
+        return;
+      }
+
+      setIsLoading(true);
+      setMessage('Verificando número de celular...');
+      setMessageType('info');
+
       // Use the original phone number for user existence check
       // The UserManagementService will handle normalization internally
       console.log('[Signup] Checking if user exists with phone:', phoneNumber);
@@ -211,20 +261,29 @@ const SignupScreen = ({ onSignupSuccess, onBackToLogin }: SignupScreenProps) => 
       
       console.log('[Signup] User check result:', userCheckResult);
 
-      // Enhanced validation logic
+      // Enhanced validation logic with better error handling
       if (userCheckResult.success) {
         if (userCheckResult.exists) {
           console.log('[Signup] User already exists, blocking registration');
-          setMessage('Este número de celular ya está registrado.');
+          setMessage('Este número de celular ya está registrado. Intenta iniciar sesión.');
           setMessageType('error');
           setIsLoading(false);
           return;
         }
         console.log('[Signup] User does not exist, proceeding with SMS verification');
       } else {
-        // If there's an error checking user existence, don't proceed
+        // Handle specific error cases from user existence check
         console.error('[Signup] Error checking user existence:', userCheckResult.error);
-        setMessage('Error al verificar el número. Inténtalo de nuevo.');
+        
+        const errorMessage = userCheckResult.error === 'NETWORK_ERROR' 
+          ? 'Error de conexión. Verifica tu internet e inténtalo de nuevo.'
+          : userCheckResult.error === 'TIMEOUT_ERROR'
+          ? 'El servidor está tardando en responder. Intenta nuevamente.'
+          : userCheckResult.error === 'SERVER_ERROR'
+          ? 'Error en el servidor. Intenta más tarde.'
+          : userCheckResult.message || 'Error al verificar el número. Inténtalo de nuevo.';
+        
+        setMessage(errorMessage);
         setMessageType('error');
         setIsLoading(false);
         return;
@@ -248,20 +307,52 @@ const SignupScreen = ({ onSignupSuccess, onBackToLogin }: SignupScreenProps) => 
         setResendTimer(60);
         setMessage('Código enviado exitosamente');
         setMessageType('info');
+        
+        // Auto-completar el código automáticamente
+        if (response.generatedCode) {
+          setTimeout(() => {
+            autoCompleteVerificationCode(response.generatedCode!);
+          }, 1500); // Esperar 1.5 segundos para que el usuario vea la transición
+        }
 
-        // Clear message after a few seconds
-        setTimeout(() => {
-          setMessage('');
-          setMessageType('');
-        }, 3000);
+        // Clear message after a few seconds (solo si no hay autocompletado)
+        if (!response.generatedCode) {
+          setTimeout(() => {
+            setMessage('');
+            setMessageType('');
+          }, 3000);
+        }
       } else {
-        setMessage(response.message || 'Error al enviar SMS');
+        // Handle specific SMS sending errors
+        const errorMessage = response.error === 'NETWORK_ERROR'
+          ? 'Error de conexión. Verifica tu internet e inténtalo de nuevo.'
+          : response.error === 'RATE_LIMIT_EXCEEDED'
+          ? 'Has enviado demasiados códigos. Espera unos minutos antes de intentar nuevamente.'
+          : response.error === 'INVALID_PHONE_NUMBER'
+          ? 'El número de teléfono ingresado no es válido.'
+          : response.error === 'TIMEOUT_ERROR'
+          ? 'El servidor está tardando en responder. Intenta nuevamente.'
+          : response.error === 'SERVER_ERROR'
+          ? 'Error en el servidor. Intenta más tarde.'
+          : response.message || 'Error al enviar SMS';
+
+        setMessage(errorMessage);
         setMessageType('error');
         console.error('[Signup] SMS Error:', response);
       }
+
     } catch (error) {
-      console.error('[Signup] Error during user check or SMS sending:', error);
-      setMessage('Error de conexión. Verifica tu internet e inténtalo de nuevo.');
+      console.error('[Signup] Unexpected error during registration process:', error);
+      
+      // Handle different types of errors
+      if (error instanceof TypeError && error.message.includes('Network request failed')) {
+        setMessage('Error de conexión. Verifica tu internet e inténtalo de nuevo.');
+      } else if (error instanceof Error && error.message.includes('timeout')) {
+        setMessage('El servidor está tardando en responder. Intenta nuevamente.');
+      } else {
+        setMessage('Ocurrió un error inesperado. Intenta nuevamente.');
+      }
+      
       setMessageType('error');
     } finally {
       setIsLoading(false);
@@ -269,17 +360,34 @@ const SignupScreen = ({ onSignupSuccess, onBackToLogin }: SignupScreenProps) => 
   };
 
   const handleSignup = async () => {
-    if (code.length !== 4) {
-      setMessage('El código debe tener exactamente 4 números');
-      setMessageType('error');
-      return;
-    }
-
-    setIsLoading(true);
-    setMessage('');
-    setMessageType('');
-
     try {
+      // Reset error states
+      setMessage('');
+      setMessageType('');
+
+      // Validation
+      if (!code?.trim()) {
+        setMessage('Por favor ingresa el código de verificación');
+        setMessageType('error');
+        return;
+      }
+
+      if (code.length !== 4) {
+        setMessage('El código debe tener exactamente 4 números');
+        setMessageType('error');
+        return;
+      }
+
+      if (!/^\d{4}$/.test(code)) {
+        setMessage('El código debe contener solo números');
+        setMessageType('error');
+        return;
+      }
+
+      setIsLoading(true);
+      setMessage('Verificando código...');
+      setMessageType('info');
+
       const formattedPhone = smsAuthService.formatPhoneNumber(phoneNumber);
 
       // Verify SMS code
@@ -295,7 +403,22 @@ const SignupScreen = ({ onSignupSuccess, onBackToLogin }: SignupScreenProps) => 
           setMessageType('');
         }, 1000);
       } else {
-        setMessage(response.message || 'Código incorrecto');
+        // Handle specific verification errors
+        const errorMessage = response.error === 'INVALID_CODE'
+          ? 'Código incorrecto. Intenta nuevamente.'
+          : response.error === 'SESSION_NOT_FOUND'
+          ? 'El código ha expirado. Solicita un nuevo código.'
+          : response.error === 'TOO_MANY_ATTEMPTS'
+          ? 'Demasiados intentos fallidos. Espera antes de intentar nuevamente.'
+          : response.error === 'NETWORK_ERROR'
+          ? 'Error de conexión. Verifica tu internet e inténtalo de nuevo.'
+          : response.error === 'TIMEOUT_ERROR'
+          ? 'El servidor está tardando en responder. Intenta nuevamente.'
+          : response.error === 'SERVER_ERROR'
+          ? 'Error en el servidor. Intenta más tarde.'
+          : response.message || 'Código incorrecto';
+
+        setMessage(errorMessage);
         setMessageType('error');
 
         // Clear code inputs on error
@@ -307,86 +430,180 @@ const SignupScreen = ({ onSignupSuccess, onBackToLogin }: SignupScreenProps) => 
           codeInputRefs[0].current?.focus();
         }, 100);
       }
+
     } catch (error) {
-      setMessage('Error de conexión. Inténtalo de nuevo.');
+      console.error('[Signup] Unexpected error during code verification:', error);
+      
+      // Handle different types of errors
+      if (error instanceof TypeError && error.message.includes('Network request failed')) {
+        setMessage('Error de conexión. Verifica tu internet e inténtalo de nuevo.');
+      } else if (error instanceof Error && error.message.includes('timeout')) {
+        setMessage('El servidor está tardando en responder. Intenta nuevamente.');
+      } else {
+        setMessage('Ocurrió un error inesperado. Intenta nuevamente.');
+      }
+      
       setMessageType('error');
+
+      // Clear code inputs on error
+      setCode('');
+      setShowCode(['', '', '', '']);
+
+      // Focus first input
+      setTimeout(() => {
+        codeInputRefs[0].current?.focus();
+      }, 100);
+
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleCreateAccount = async () => {
-    if (pin.length !== 4) {
-      setMessage('El PIN debe tener exactamente 4 dígitos');
-      setMessageType('error');
-      return;
-    }
-
-    if (confirmPin.length !== 4) {
-      setMessage('Confirma tu PIN ingresando 4 dígitos');
-      setMessageType('error');
-      return;
-    }
-
-    if (pin !== confirmPin) {
-      setMessage('Los PINs no coinciden. Inténtalo de nuevo.');
-      setMessageType('error');
-      
-      // Limpiar campos de PIN
-      setConfirmPin('');
-      setShowConfirmPin(['', '', '', '']);
-      
-      // Enfocar el primer campo de confirmación
-      setTimeout(() => {
-        confirmPinInputRefs[0].current?.focus();
-      }, 100);
-      return;
-    }
-
-    setIsLoading(true);
-    setMessage('Creando cuenta...');
-    setMessageType('info');
-
     try {
+      // Reset error states
+      setMessage('');
+      setMessageType('');
+
+      // Validate PIN inputs
+      if (!pin?.trim()) {
+        setMessage('Por favor ingresa tu PIN');
+        setMessageType('error');
+        return;
+      }
+
+      if (pin.length !== 4) {
+        setMessage('El PIN debe tener exactamente 4 dígitos');
+        setMessageType('error');
+        return;
+      }
+
+      if (!/^\d{4}$/.test(pin)) {
+        setMessage('El PIN debe contener solo números');
+        setMessageType('error');
+        return;
+      }
+
+      if (!confirmPin?.trim()) {
+        setMessage('Por favor confirma tu PIN');
+        setMessageType('error');
+        return;
+      }
+
+      if (confirmPin.length !== 4) {
+        setMessage('Confirma tu PIN ingresando 4 dígitos');
+        setMessageType('error');
+        return;
+      }
+
+      if (!/^\d{4}$/.test(confirmPin)) {
+        setMessage('La confirmación de PIN debe contener solo números');
+        setMessageType('error');
+        return;
+      }
+
+      if (pin !== confirmPin) {
+        setMessage('Los PINs no coinciden. Inténtalo de nuevo.');
+        setMessageType('error');
+        
+        // Limpiar campos de PIN
+        setConfirmPin('');
+        setShowConfirmPin(['', '', '', '']);
+        
+        // Enfocar el primer campo de confirmación
+        setTimeout(() => {
+          confirmPinInputRefs[0].current?.focus();
+        }, 100);
+        return;
+      }
+
+      // Security check for weak PINs
+      const weakPins = ['0000', '1111', '2222', '3333', '4444', '5555', '6666', '7777', '8888', '9999', '1234', '4321'];
+      if (weakPins.includes(pin)) {
+        setMessage('Por seguridad, elige un PIN menos obvio que no sea repetitivo o secuencial.');
+        setMessageType('error');
+        return;
+      }
+
+      setIsLoading(true);
+      setMessage('Creando cuenta...');
+      setMessageType('info');
+
       // Final check before creating account - IMPORTANT SECURITY MEASURE
       console.log('[Signup] Final user existence check before account creation:', phoneNumber);
       
       const finalUserCheck = await userManagementService.checkUserExists(phoneNumber);
       
-      if (finalUserCheck.success && finalUserCheck.exists) {
+      if (!finalUserCheck.success) {
+        // Handle specific error cases
+        const errorMessage = finalUserCheck.error === 'NETWORK_ERROR'
+          ? 'Error de conexión. Verifica tu internet e inténtalo de nuevo.'
+          : finalUserCheck.error === 'TIMEOUT_ERROR'
+          ? 'El servidor está tardando en responder. Intenta nuevamente.'
+          : finalUserCheck.error === 'SERVER_ERROR'
+          ? 'Error en el servidor. Intenta más tarde.'
+          : 'Error al verificar el estado de la cuenta. Intenta nuevamente.';
+
+        setMessage(errorMessage);
+        setMessageType('error');
+        setIsLoading(false);
+        return;
+      }
+
+      if (finalUserCheck.exists) {
         console.log('[Signup] SECURITY ALERT: User tried to create account but already exists');
-        setMessage('Este número ya está registrado. Se ha detectado un conflicto.');
+        setMessage('Este número ya está registrado. Intenta iniciar sesión en su lugar.');
         setMessageType('error');
         setIsLoading(false);
         return;
       }
 
       // Proceed with user registration - UserManagementService will handle normalization
-      const registrationResult = await userManagementService.registerUser(name, phoneNumber, pin);
+      const registrationResult = await userManagementService.registerUser(name.trim(), phoneNumber, pin);
       
       if (registrationResult.success) {
         console.log('[Signup] Account created successfully for:', phoneNumber);
-        setMessage(`¡Bienvenido ${name}! Tu cuenta ha sido creada exitosamente.`);
+        setMessage(`¡Bienvenido ${name.trim()}! Tu cuenta ha sido creada exitosamente.`);
         setMessageType('success');
 
         setTimeout(() => {
-          onSignupSuccess(phoneNumber, name);
+          onSignupSuccess(phoneNumber, name.trim());
         }, 1500);
       } else {
-        // Handle specific error messages from backend
-        if (registrationResult.error?.includes('Phone number already registered') || 
-            registrationResult.error?.includes('número de teléfono ya está registrado')) {
-          console.log('[Signup] Backend detected existing user during registration');
-          setMessage('Este número de celular ya está registrado.');
-          setMessageType('error');
-        } else {
-          setMessage(registrationResult.error || 'Error al crear la cuenta');
-          setMessageType('error');
-        }
+        // Handle specific error messages from backend with better user feedback
+        const errorMessage = registrationResult.error === 'NETWORK_ERROR'
+          ? 'Error de conexión. Verifica tu internet e inténtalo de nuevo.'
+          : registrationResult.error === 'TIMEOUT_ERROR'
+          ? 'El servidor está tardando en responder. Intenta nuevamente.'
+          : registrationResult.error === 'SERVER_ERROR'
+          ? 'Error interno del servidor. Intenta más tarde.'
+          : registrationResult.error === 'INVALID_PHONE_FORMAT'
+          ? 'El número de teléfono no tiene un formato válido.'
+          : registrationResult.error === 'INVALID_NAME'
+          ? 'Por favor ingresa un nombre válido.'
+          : registrationResult.error === 'INVALID_PASSWORD'
+          ? 'Por favor ingresa un PIN válido.'
+          : registrationResult.error?.includes('Phone number already registered') || 
+            registrationResult.error?.includes('número de teléfono ya está registrado')
+          ? 'Este número de celular ya está registrado. Intenta iniciar sesión.'
+          : registrationResult.message || 'Error al crear la cuenta. Intenta nuevamente.';
+
+        setMessage(errorMessage);
+        setMessageType('error');
       }
+
     } catch (error) {
-      console.error('[Signup] Error during account creation:', error);
-      setMessage('Error de conexión. Inténtalo de nuevo.');
+      console.error('[Signup] Unexpected error during account creation:', error);
+      
+      // Handle different types of errors
+      if (error instanceof TypeError && error.message.includes('Network request failed')) {
+        setMessage('Error de conexión. Verifica tu internet e inténtalo de nuevo.');
+      } else if (error instanceof Error && error.message.includes('timeout')) {
+        setMessage('El servidor está tardando en responder. Intenta nuevamente.');
+      } else {
+        setMessage('Ocurrió un error inesperado. Intenta nuevamente.');
+      }
+      
       setMessageType('error');
     } finally {
       setIsLoading(false);
@@ -431,16 +648,25 @@ const SignupScreen = ({ onSignupSuccess, onBackToLogin }: SignupScreenProps) => 
         setCode('');
         setShowCode(['', '', '', '']);
 
-        // Focus first input
-        setTimeout(() => {
-          codeInputRefs[0].current?.focus();
-        }, 100);
+        // Auto-completar el código automáticamente
+        if (response.generatedCode) {
+          setTimeout(() => {
+            autoCompleteVerificationCode(response.generatedCode!);
+          }, 1500); // Esperar 1.5 segundos para que el usuario vea la transición
+        } else {
+          // Focus first input only if not auto-completing
+          setTimeout(() => {
+            codeInputRefs[0].current?.focus();
+          }, 100);
+        }
 
-        // Clear message after a few seconds
-        setTimeout(() => {
-          setMessage('');
-          setMessageType('');
-        }, 3000);
+        // Clear message after a few seconds (solo si no hay autocompletado)
+        if (!response.generatedCode) {
+          setTimeout(() => {
+            setMessage('');
+            setMessageType('');
+          }, 3000);
+        }
       } else {
         setMessage(response.message || 'Error al reenviar SMS');
         setMessageType('error');

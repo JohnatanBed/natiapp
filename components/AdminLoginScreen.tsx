@@ -25,25 +25,44 @@ const AdminLoginScreen = ({ onAdminLoginSuccess, onBackToUserLogin }: AdminLogin
   const [messageType, setMessageType] = useState<'error' | 'success' | 'info' | ''>('');
 
   const handleAdminLogin = async () => {
-    if (!email.trim() || !password.trim()) {
-      setMessage('Por favor completa todos los campos');
-      setMessageType('error');
-      return;
-    }
-
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setMessage('Por favor ingresa un email válido');
-      setMessageType('error');
-      return;
-    }
-
-    setIsLoading(true);
-    setMessage('');
-
     try {
-      const result = await userManagementService.adminLogin(email, password);
+      // Reset error states
+      setMessage('');
+      setMessageType('');
+
+      // Input validation
+      if (!email?.trim()) {
+        setMessage('Por favor ingresa tu email');
+        setMessageType('error');
+        return;
+      }
+
+      if (!password?.trim()) {
+        setMessage('Por favor ingresa tu contraseña');
+        setMessageType('error');
+        return;
+      }
+
+      // Basic email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email.trim())) {
+        setMessage('Por favor ingresa un email válido');
+        setMessageType('error');
+        return;
+      }
+
+      // Password length validation
+      if (password.length < 6) {
+        setMessage('La contraseña debe tener al menos 6 caracteres');
+        setMessageType('error');
+        return;
+      }
+
+      setIsLoading(true);
+      setMessage('Verificando credenciales...');
+      setMessageType('info');
+
+      const result = await userManagementService.adminLogin(email.trim(), password.trim());
       
       if (result.success && result.admin) {
         setMessage('Login exitoso');
@@ -52,11 +71,37 @@ const AdminLoginScreen = ({ onAdminLoginSuccess, onBackToUserLogin }: AdminLogin
           onAdminLoginSuccess(result.admin);
         }, 1000);
       } else {
-        setMessage(result.error || 'Error al iniciar sesión');
+        // Handle specific admin login errors with better user feedback
+        const errorMessage = result.error === 'NETWORK_ERROR'
+          ? 'Error de conexión. Verifica tu internet e inténtalo de nuevo.'
+          : result.error === 'TIMEOUT_ERROR'
+          ? 'El servidor está tardando en responder. Intenta nuevamente.'
+          : result.error === 'INVALID_CREDENTIALS'
+          ? 'Email o contraseña incorrectos. Verifica e intenta nuevamente.'
+          : result.error === 'SERVER_ERROR'
+          ? 'Error interno del servidor. Intenta más tarde.'
+          : result.error === 'INVALID_EMAIL_FORMAT'
+          ? 'Por favor ingresa un email válido.'
+          : result.error === 'INVALID_EMAIL' || result.error === 'INVALID_PASSWORD'
+          ? 'Por favor completa todos los campos correctamente.'
+          : result.message || 'Error al iniciar sesión. Verifica tus credenciales.';
+
+        setMessage(errorMessage);
         setMessageType('error');
       }
+
     } catch (error) {
-      setMessage('Error de conexión. Inténtalo de nuevo.');
+      console.error('[AdminLogin] Unexpected error during admin login:', error);
+      
+      // Handle different types of errors
+      if (error instanceof TypeError && error.message.includes('Network request failed')) {
+        setMessage('Error de conexión. Verifica tu internet e inténtalo de nuevo.');
+      } else if (error instanceof Error && error.message.includes('timeout')) {
+        setMessage('El servidor está tardando en responder. Intenta nuevamente.');
+      } else {
+        setMessage('Ocurrió un error inesperado. Intenta nuevamente.');
+      }
+      
       setMessageType('error');
     } finally {
       setIsLoading(false);

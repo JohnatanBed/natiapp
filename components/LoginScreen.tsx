@@ -77,19 +77,37 @@ const LoginScreen = ({ onLoginSuccess, onNavigateToSignup, onNavigateToAdminLogi
   };
 
   const handleNext = async () => {
-    if (phoneNumber.trim() === '') {
-      setMessage('Por favor ingresa tu número de celular');
-      setMessageType('error');
-      return;
-    }
-
-    if (phoneNumber.length !== 10) {
-      setMessage('El número de celular debe tener exactamente 10 dígitos');
-      setMessageType('error');
-      return;
-    }
-    
     try {
+      // Reset error states
+      setMessage('');
+      setMessageType('');
+
+      // Input validation
+      if (!phoneNumber?.trim()) {
+        setMessage('Por favor ingresa tu número de celular');
+        setMessageType('error');
+        return;
+      }
+
+      if (phoneNumber.length !== 10) {
+        setMessage('El número de celular debe tener exactamente 10 dígitos');
+        setMessageType('error');
+        return;
+      }
+
+      // Colombian mobile number validation
+      if (!phoneNumber.startsWith('3')) {
+        setMessage('El número debe ser un celular válido (debe empezar con 3)');
+        setMessageType('error');
+        return;
+      }
+
+      if (!/^\d{10}$/.test(phoneNumber)) {
+        setMessage('El número debe contener solo dígitos');
+        setMessageType('error');
+        return;
+      }
+      
       setIsVerifyingNumber(true);
       setMessage('Verificando número de teléfono...');
       setMessageType('info');
@@ -97,49 +115,78 @@ const LoginScreen = ({ onLoginSuccess, onNavigateToSignup, onNavigateToAdminLogi
       // Verificar si el usuario existe en la base de datos
       const checkResult = await userManagementService.checkUserExists(phoneNumber);
       
-      if (checkResult.success && checkResult.exists) {
-        // El usuario existe, podemos continuar al paso de ingresar clave
-        setMessage('');
-        setMessageType('');
-        setCurrentStep(2);
-        
-        // Limpiar timer anterior si existe
-        if (timerRef.current) {
-          clearInterval(timerRef.current);
+      if (checkResult.success) {
+        if (checkResult.exists) {
+          // El usuario existe, podemos continuar al paso de ingresar clave
+          setMessage('');
+          setMessageType('');
+          setCurrentStep(2);
+          
+          // Limpiar timer anterior si existe
+          if (timerRef.current) {
+            clearInterval(timerRef.current);
+          }
+
+          // Iniciar timer para reenvío
+          setCanResend(false);
+          setResendTimer(60);
+          
+          timerRef.current = setInterval(() => {
+            setResendTimer((prev) => {
+              if (prev <= 1) {
+                setCanResend(true);
+                if (timerRef.current) {
+                  clearInterval(timerRef.current);
+                  timerRef.current = null;
+                }
+                return 0;
+              }
+              return prev - 1;
+            });
+          }, 1000);
+        } else {
+          // El usuario no existe
+          setMessage('El número no está registrado. Por favor regístrate primero.');
+          setMessageType('error');
+          setIsVerifyingNumber(false);
+          return;
         }
       } else {
-        // El usuario no existe
-        setMessage('El número no está registrado. Por favor regístrate primero.');
+        // Handle specific error cases from user existence check
+        const errorMessage = checkResult.error === 'NETWORK_ERROR'
+          ? 'Error de conexión. Verifica tu internet e inténtalo de nuevo.'
+          : checkResult.error === 'TIMEOUT_ERROR'
+          ? 'El servidor está tardando en responder. Intenta nuevamente.'
+          : checkResult.error === 'SERVER_ERROR'
+          ? 'Error en el servidor. Intenta más tarde.'
+          : checkResult.error === 'INVALID_PHONE_FORMAT'
+          ? 'El número de teléfono no tiene un formato válido.'
+          : checkResult.message || 'Error al verificar el número. Intenta nuevamente.';
+
+        setMessage(errorMessage);
         setMessageType('error');
         setIsVerifyingNumber(false);
         return;
       }
+
     } catch (error) {
-      setMessage('Error al verificar el número. Intente nuevamente.');
+      console.error('[Login] Unexpected error during phone verification:', error);
+      
+      // Handle different types of errors
+      if (error instanceof TypeError && error.message.includes('Network request failed')) {
+        setMessage('Error de conexión. Verifica tu internet e inténtalo de nuevo.');
+      } else if (error instanceof Error && error.message.includes('timeout')) {
+        setMessage('El servidor está tardando en responder. Intenta nuevamente.');
+      } else {
+        setMessage('Ocurrió un error inesperado. Intenta nuevamente.');
+      }
+      
       setMessageType('error');
       setIsVerifyingNumber(false);
       return;
     } finally {
       setIsVerifyingNumber(false);
     }
-    
-    // Iniciar timer para reenvío
-    setCanResend(false);
-    setResendTimer(60);
-    
-    timerRef.current = setInterval(() => {
-      setResendTimer((prev) => {
-        if (prev <= 1) {
-          setCanResend(true);
-          if (timerRef.current) {
-            clearInterval(timerRef.current);
-            timerRef.current = null;
-          }
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
   };
 
   const handleBack = () => {
@@ -159,15 +206,32 @@ const LoginScreen = ({ onLoginSuccess, onNavigateToSignup, onNavigateToAdminLogi
   };
 
   const handleLogin = async () => {
-    if (code.length !== 4) {
-      setMessage('Por favor ingresa el código de 4 dígitos');
-      setMessageType('error');
-      return;
-    }
-
     try {
+      // Reset error states
       setMessage('');
       setMessageType('');
+
+      // Input validation
+      if (!code?.trim()) {
+        setMessage('Por favor ingresa tu PIN');
+        setMessageType('error');
+        return;
+      }
+
+      if (code.length !== 4) {
+        setMessage('Por favor ingresa el código de 4 dígitos');
+        setMessageType('error');
+        return;
+      }
+
+      if (!/^\d{4}$/.test(code)) {
+        setMessage('El PIN debe contener solo números');
+        setMessageType('error');
+        return;
+      }
+
+      setMessage('Iniciando sesión...');
+      setMessageType('info');
       
       // Iniciar sesión con el número de teléfono y el PIN (contraseña)
       const loginResult = await userManagementService.loginUser(phoneNumber, code);
@@ -181,7 +245,22 @@ const LoginScreen = ({ onLoginSuccess, onNavigateToSignup, onNavigateToAdminLogi
           onLoginSuccess(phoneNumber);
         }, 1000);
       } else {
-        setMessage(loginResult.error || 'PIN incorrecto');
+        // Handle specific login errors with better user feedback
+        const errorMessage = loginResult.error === 'NETWORK_ERROR'
+          ? 'Error de conexión. Verifica tu internet e inténtalo de nuevo.'
+          : loginResult.error === 'TIMEOUT_ERROR'
+          ? 'El servidor está tardando en responder. Intenta nuevamente.'
+          : loginResult.error === 'INVALID_CREDENTIALS'
+          ? 'PIN incorrecto. Verifica e intenta nuevamente.'
+          : loginResult.error === 'USER_NOT_FOUND'
+          ? 'Usuario no encontrado. Verifica tu número o regístrate.'
+          : loginResult.error === 'SERVER_ERROR'
+          ? 'Error interno del servidor. Intenta más tarde.'
+          : loginResult.error === 'INVALID_PHONE_FORMAT'
+          ? 'El número de teléfono no tiene un formato válido.'
+          : loginResult.message || 'Error al iniciar sesión. Intenta nuevamente.';
+
+        setMessage(errorMessage);
         setMessageType('error');
         
         // Limpiar campos de código
@@ -193,9 +272,29 @@ const LoginScreen = ({ onLoginSuccess, onNavigateToSignup, onNavigateToAdminLogi
           codeInputRefs[0].current?.focus();
         }, 100);
       }
+
     } catch (error) {
-      setMessage('Error de conexión. Inténtalo de nuevo.');
+      console.error('[Login] Unexpected error during login:', error);
+      
+      // Handle different types of errors
+      if (error instanceof TypeError && error.message.includes('Network request failed')) {
+        setMessage('Error de conexión. Verifica tu internet e inténtalo de nuevo.');
+      } else if (error instanceof Error && error.message.includes('timeout')) {
+        setMessage('El servidor está tardando en responder. Intenta nuevamente.');
+      } else {
+        setMessage('Ocurrió un error inesperado. Intenta nuevamente.');
+      }
+      
       setMessageType('error');
+
+      // Limpiar campos de código
+      setCode('');
+      setShowCode(['', '', '', '']);
+      
+      // Enfocar el primer campo
+      setTimeout(() => {
+        codeInputRefs[0].current?.focus();
+      }, 100);
     }
   };
 

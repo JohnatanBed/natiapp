@@ -8,7 +8,7 @@ class ApiService {
   // 2. Emulador Android: 'http://10.0.2.2:5000/api'
   // 3. IP de tu máquina (para dispositivos reales): 'http://192.168.1.XX:5000/api'
   // IMPORTANTE: Para dispositivos físicos, cambia esta URL a la IP de tu máquina
-  private baseURL: string = 'http://192.168.1.8:5000/api'; // Configurado para emulador por defecto
+  private baseURL: string = 'http://192.168.80.13:5000/api'; // Configurado para emulador por defecto
   
   constructor() {
     // Intenta cargar la URL base guardada en AsyncStorage al inicializar
