@@ -7,7 +7,7 @@ import {
   KeyboardAvoidingView,
 } from 'react-native';
 import { signupStyles } from '../styles';
-import { userManagementService, smsAuthService } from '../services';
+import { userManagementService, smsAuthService, apiService } from '../services';
 
 interface SignupScreenProps {
   onSignupSuccess: (phoneNumber: string, name: string) => void;
@@ -211,32 +211,39 @@ const SignupScreen = ({ onSignupSuccess, onBackToLogin }: SignupScreenProps) => 
       setMessageType('');
 
       // Validate input data
+      
+      if(!phoneNumber?.trim() && !name?.trim()) {
+        setMessage('Ingresa tu nombre y número de celular');
+        setMessageType('error');
+        return;
+      }
+
       if (!name?.trim()) {
-        setMessage('Por favor ingresa tu nombre');
+        setMessage('Ingresa tu nombre');
         setMessageType('error');
         return;
       }
 
       if (name.trim().length < 2) {
-        setMessage('Por favor ingresa un nombre válido (mínimo 2 caracteres)');
+        setMessage('Ingresa un nombre válido (mínimo 3 caracteres)');
         setMessageType('error');
         return;
       }
 
       if (name.trim().length > 50) {
-        setMessage('El nombre no puede exceder 50 caracteres');
+        setMessage('El nombre no puede exceder 30 caracteres');
         setMessageType('error');
         return;
       }
 
       if (!phoneNumber?.trim()) {
-        setMessage('Por favor ingresa tu número de celular');
+        setMessage('Ingresa tu número de celular');
         setMessageType('error');
         return;
       }
 
       if (phoneNumber.length !== 10) {
-        setMessage('El número de celular debe tener exactamente 10 dígitos');
+        setMessage('El número celular debe tener 10 dígitos');
         setMessageType('error');
         return;
       }
@@ -265,7 +272,7 @@ const SignupScreen = ({ onSignupSuccess, onBackToLogin }: SignupScreenProps) => 
       if (userCheckResult.success) {
         if (userCheckResult.exists) {
           console.log('[Signup] User already exists, blocking registration');
-          setMessage('Este número de celular ya está registrado. Intenta iniciar sesión.');
+          setMessage('Este número de celular ya está registrado.');
           setMessageType('error');
           setIsLoading(false);
           return;
@@ -367,13 +374,13 @@ const SignupScreen = ({ onSignupSuccess, onBackToLogin }: SignupScreenProps) => 
 
       // Validation
       if (!code?.trim()) {
-        setMessage('Por favor ingresa el código de verificación');
+        setMessage('Ingresa el código de verificación');
         setMessageType('error');
         return;
       }
 
       if (code.length !== 4) {
-        setMessage('El código debe tener exactamente 4 números');
+        setMessage('El código debe tener exactamente 4 dígitos');
         setMessageType('error');
         return;
       }
@@ -409,7 +416,7 @@ const SignupScreen = ({ onSignupSuccess, onBackToLogin }: SignupScreenProps) => 
           : response.error === 'SESSION_NOT_FOUND'
           ? 'El código ha expirado. Solicita un nuevo código.'
           : response.error === 'TOO_MANY_ATTEMPTS'
-          ? 'Demasiados intentos fallidos. Espera antes de intentar nuevamente.'
+          ? 'Demasiados intentos fallidos.'
           : response.error === 'NETWORK_ERROR'
           ? 'Error de conexión. Verifica tu internet e inténtalo de nuevo.'
           : response.error === 'TIMEOUT_ERROR'
@@ -467,7 +474,7 @@ const SignupScreen = ({ onSignupSuccess, onBackToLogin }: SignupScreenProps) => 
 
       // Validate PIN inputs
       if (!pin?.trim()) {
-        setMessage('Por favor ingresa tu PIN');
+        setMessage('Ingresa tu PIN');
         setMessageType('error');
         return;
       }
@@ -485,7 +492,7 @@ const SignupScreen = ({ onSignupSuccess, onBackToLogin }: SignupScreenProps) => 
       }
 
       if (!confirmPin?.trim()) {
-        setMessage('Por favor confirma tu PIN');
+        setMessage('Confirma tu PIN');
         setMessageType('error');
         return;
       }
@@ -562,6 +569,9 @@ const SignupScreen = ({ onSignupSuccess, onBackToLogin }: SignupScreenProps) => 
       const registrationResult = await userManagementService.registerUser(name.trim(), phoneNumber, pin);
       
       if (registrationResult.success) {
+        if (registrationResult.token) {
+          await apiService.setToken(registrationResult.token);
+        }
         console.log('[Signup] Account created successfully for:', phoneNumber);
         setMessage(`¡Bienvenido ${name.trim()}! Tu cuenta ha sido creada exitosamente.`);
         setMessageType('success');
@@ -580,7 +590,7 @@ const SignupScreen = ({ onSignupSuccess, onBackToLogin }: SignupScreenProps) => 
           : registrationResult.error === 'INVALID_PHONE_FORMAT'
           ? 'El número de teléfono no tiene un formato válido.'
           : registrationResult.error === 'INVALID_NAME'
-          ? 'Por favor ingresa un nombre válido.'
+          ? 'Ingresa un nombre válido.'
           : registrationResult.error === 'INVALID_PASSWORD'
           ? 'Por favor ingresa un PIN válido.'
           : registrationResult.error?.includes('Phone number already registered') || 

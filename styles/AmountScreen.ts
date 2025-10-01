@@ -1,0 +1,254 @@
+import { StyleSheet } from 'react-native';
+import { colors, spacing, fontSizes, borders } from './global';
+
+export const amountStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  }, 
+  header: {
+    backgroundColor: '#16a34a',
+    padding: 20,
+    paddingTop: 90,
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 8,
+  },
+  backButton: {
+    marginBottom: spacing.sm,
+    textAlign: 'center',
+    alignItems: 'center',
+    marginTop: 30,
+  },
+  backButtonText: {
+    color: '#16a34a',
+    fontSize: fontSizes.medium,
+    fontWeight: '600',
+  },
+  content: {
+    padding: spacing.xl,
+    flex: 1,
+  },
+  dateTimeContainer: {
+    backgroundColor: colors.white,
+    padding: spacing.lg,
+    borderRadius: borders.radiusLarge,
+    marginBottom: spacing.xl,
+    alignItems: 'center',
+    shadowColor: colors.shadow,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  dateTimeLabel: {
+    fontSize: fontSizes.small,
+    fontWeight: '600',
+    color: colors.textMuted,
+    marginBottom: spacing.xs,
+  },
+  dateTimeValue: {
+    fontSize: fontSizes.large,
+    fontWeight: 'bold',
+    color: colors.textPrimary,
+  },
+  formContainer: {
+    marginBottom: spacing.xl,
+  },
+  inputGroup: {
+    marginBottom: spacing.xl,
+  },
+  label: {
+    fontSize: fontSizes.medium,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
+  },
+  amountContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.white,
+    borderRadius: borders.radiusLarge,
+    borderWidth: 2,
+    borderColor: colors.primary,
+    paddingHorizontal: spacing.lg,
+    shadowColor: colors.shadow,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  currencySymbol: {
+    fontSize: fontSizes.large,
+    fontWeight: 'bold',
+    color: colors.primary,
+    marginRight: spacing.sm,
+  },
+  amountInput: {
+    flex: 1,
+    fontSize: fontSizes.large,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    paddingVertical: spacing.lg,
+  },
+  textInput: {
+    backgroundColor: colors.white,
+    borderRadius: borders.radiusLarge,
+    borderWidth: 2,
+    borderColor: colors.primaryLight,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    fontSize: fontSizes.medium,
+    color: colors.textPrimary,
+    textAlignVertical: 'top',
+    shadowColor: colors.shadow,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  amountButton: {
+    backgroundColor: colors.primary,
+    paddingVertical: spacing.lg,
+    borderRadius: borders.radiusLarge,
+    alignItems: 'center',
+    shadowColor: colors.shadow,
+  },
+  amountButtonDisabled: {
+    backgroundColor: colors.textMuted,
+  },
+  amountButtonText: {
+    color: colors.white,
+    fontSize: fontSizes.large,
+    fontWeight: 'bold',
+  },
+  /*
+  summaryCard: {
+    backgroundColor: colors.white,
+    padding: spacing.lg,
+    borderRadius: borders.radiusLarge,
+    marginBottom: spacing.xl,
+    shadowColor: colors.shadow,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  summaryTitle: {
+    fontSize: fontSizes.large,
+    fontWeight: 'bold',
+    color: colors.primary,
+    marginBottom: spacing.md,
+    textAlign: 'center',
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    paddingBottom: spacing.xs,
+  },
+  summaryLabel: {
+    fontSize: fontSizes.medium,
+    color: colors.textSecondary,
+    fontWeight: '500',
+  },
+  summaryValue: {
+    fontSize: fontSizes.medium,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    flex: 1,
+    textAlign: 'right',
+  },
+  */
+  // Estilos para la sección de imágenes
+  imageButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: spacing.md,
+  },
+  imageButton: {
+    backgroundColor: colors.primaryLight,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    borderRadius: borders.radius,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 120,
+  },
+  imageButtonText: {
+    color: colors.white,
+    fontSize: fontSizes.medium,
+    fontWeight: '600',
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.lg,
+  },
+  loadingText: {
+    marginTop: spacing.md,
+    color: colors.textSecondary,
+    fontSize: fontSizes.medium,
+  },
+  imagePreviewContainer: {
+    marginTop: spacing.md,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: borders.radius,
+    padding: spacing.md,
+    backgroundColor: colors.white,
+  },
+  imagePreview: {
+    width: '100%',
+    height: 200,
+    borderRadius: borders.radius,
+    marginBottom: spacing.md,
+  },
+  removeImageButton: {
+    backgroundColor: '#fee2e2',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borders.radius,
+    marginTop: spacing.sm,
+  },
+  removeImageText: {
+    color: '#ef4444',
+    fontSize: fontSizes.small,
+    fontWeight: '600',
+  },
+  // Estilos para la imagen en el resumen
+  /*
+  summaryImageContainer: {
+    marginTop: spacing.md,
+    padding: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  summaryImage: {
+    width: '100%',
+    height: 120,
+    borderRadius: borders.radius,
+    marginTop: spacing.sm,
+  },
+  */
+});

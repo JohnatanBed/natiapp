@@ -4,52 +4,50 @@ const { query } = require('../config/db');
 // Admin model class
 class Admin {
   constructor(adminData) {
-    this.id = adminData.id;
+    this.id_admin = adminData.id_admin;
     this.name = adminData.name;
     this.email = adminData.email;
     this.password = adminData.password;
+    this.code_group = adminData.code_group;
     this.role = adminData.role || 'admin';
-    this.permissions = adminData.permissions || {
-      manageUsers: true,
-      viewStatistics: true
-    };
     this.registeredAt = adminData.registeredAt || new Date();
   }
 
   // Create a new admin
   static async create(adminData) {
-    // Check if admin already exists
-    const existingAdmin = await this.findOne({ email: adminData.email });
-    if (existingAdmin) {
-      throw new Error('Admin already exists');
+    // Check if admin already exists with same email
+    const existingAdminByEmail = await this.findOne({ email: adminData.email });
+    if (existingAdminByEmail) {
+      throw new Error('Admin with this email already exists');
+    }
+
+    // Check if code_group is already in use
+    if (adminData.code_group) {
+      const existingAdminByCode = await this.findOne({ code_group: adminData.code_group });
+      if (existingAdminByCode) {
+        throw new Error('Code group already in use');
+      }
+    } else {
+      throw new Error('Code group is required');
     }
 
     // Hash password
     const salt = await bcrypt.genSalt(10);
     adminData.password = await bcrypt.hash(adminData.password, salt);
 
-    // Convert permissions to JSON string
-    const permissionsJSON = JSON.stringify(adminData.permissions || {
-      manageUsers: true,
-      viewStatistics: true
-    });
-
     // Insert admin into database
     const result = await query(
-      'INSERT INTO admins (name, email, password, role, permissions, registeredAt) VALUES (?, ?, ?, ?, ?, NOW())',
-      [adminData.name, adminData.email, adminData.password, adminData.role || 'admin', permissionsJSON]
+      'INSERT INTO admins (name, email, password, code_group, role) VALUES (?, ?, ?, ?, ?)',
+      [adminData.name, adminData.email, adminData.password, adminData.code_group, adminData.role || 'admin']
     );
 
     // Return the newly created admin with its ID
     return {
-      id: result.insertId,
+      id_admin: result.insertId,
       name: adminData.name,
       email: adminData.email,
+      code_group: adminData.code_group,
       role: adminData.role || 'admin',
-      permissions: adminData.permissions || {
-        manageUsers: true,
-        viewStatistics: true
-      },
       registeredAt: new Date()
     };
   }
@@ -75,25 +73,17 @@ class Admin {
     }
 
     const admin = results[0];
-    // Parse permissions from JSON string
-    if (admin.permissions) {
-      try {
-        admin.permissions = JSON.parse(admin.permissions);
-      } catch (error) {
-        console.error('Error parsing permissions:', error);
-        admin.permissions = {
-          manageUsers: true,
-          viewStatistics: true
-        };
-      }
-    }
-
     return admin;
   }
 
   // Find admin by ID
-  static async findById(id) {
-    return this.findOne({ id });
+  static async findById(id_admin) {
+    return this.findOne({ id_admin });
+  }
+  
+  // Find admin by code_group
+  static async findByCodeGroup(code_group) {
+    return this.findOne({ code_group });
   }
 
   // Update admin
@@ -110,9 +100,12 @@ class Admin {
       updateData.password = await bcrypt.hash(updateData.password, salt);
     }
 
-    // Handle permissions update
-    if (updateData.permissions) {
-      updateData.permissions = JSON.stringify(updateData.permissions);
+    // Check if code_group is being updated and is unique
+    if (updateData.code_group) {
+      const existingAdmin = await this.findOne({ code_group: updateData.code_group });
+      if (existingAdmin && existingAdmin.id_admin !== admin.id_admin) {
+        throw new Error('Code group already in use');
+      }
     }
 
     // Build update query
@@ -161,7 +154,5 @@ class Admin {
     return await bcrypt.compare(enteredPassword, admin.password);
   }
 }
-
-module.exports = Admin;
 
 module.exports = Admin;

@@ -8,7 +8,7 @@ export const homeStyles = StyleSheet.create({
   header: {
     backgroundColor: '#16a34a',
     padding: 20,
-    paddingTop: 40,
+    paddingTop: 80,
     alignItems: 'center',
   },
   welcomeTitle: {
@@ -124,5 +124,13 @@ export const homeStyles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     textAlign: 'center',
+  },
+  totalAmountText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: 'black',
+    marginBottom: 20,
+    textAlign: 'center',
+
   },
 });

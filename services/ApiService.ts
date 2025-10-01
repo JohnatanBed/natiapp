@@ -2,54 +2,17 @@
 // This service handles common operations with our backend API
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+interface ImageAsset {
+  uri: string;
+  type?: string;
+  name?: string;
+}
+
 class ApiService {
-  // Opciones de URL para diferentes entornos:
-  // 1. Localhost (para desarrollo web): 'http://localhost:5000/api'
-  // 2. Emulador Android: 'http://10.0.2.2:5000/api'
-  // 3. IP de tu máquina (para dispositivos reales): 'http://192.168.1.XX:5000/api'
-  // IMPORTANTE: Para dispositivos físicos, cambia esta URL a la IP de tu máquina
-  private baseURL: string = 'http://192.168.80.13:5000/api'; // Configurado para emulador por defecto
-  
-  constructor() {
-    // Intenta cargar la URL base guardada en AsyncStorage al inicializar
-    this.loadSavedBaseURL();
-  }
-  
-  // Cargar URL base guardada anteriormente
-  private async loadSavedBaseURL(): Promise<void> {
-    try {
-      const savedURL = await AsyncStorage.getItem('api_base_url');
-      if (savedURL) {
-        this.setBaseURL(savedURL);
-      }
-    } catch (error) {
-      console.error('Error loading saved API URL:', error);
-    }
-  }
+
+  private baseURL: string ='http://192.168.80.17:5000/api';
+
   private token: string | null = null;
-  
-  // Método para cambiar la URL base en tiempo de ejecución
-  public async setBaseURL(url: string): Promise<void> {
-    if (!url.endsWith('/api')) {
-      // Asegurarnos de que la URL termine con /api
-      this.baseURL = url.endsWith('/') ? `${url}api` : `${url}/api`;
-    } else {
-      this.baseURL = url;
-    }
-    
-    // Guardar la URL base en AsyncStorage para uso futuro
-    try {
-      await AsyncStorage.setItem('api_base_url', url);
-      console.log(`API base URL actualizada y guardada: ${this.baseURL}`);
-    } catch (error) {
-      console.error('Error guardando API URL en AsyncStorage:', error);
-    }
-  }
-  
-  // Método para obtener la URL base actual
-  public getBaseURL(): string {
-    return this.baseURL;
-  }
 
   // Get authorization header with token
   private getHeaders(): Record<string, string> {
@@ -291,6 +254,85 @@ class ApiService {
       }
       throw error;
     }
+  }
+
+  // POST request helper with FormData (for file uploads)
+  public async postFormData<T>(endpoint: string, formData: FormData): Promise<T> {
+    try {
+      console.log(`Sending FormData POST request to: ${this.baseURL}${endpoint}`);
+      
+      // Create headers without Content-Type so the browser sets it automatically with boundary
+      const headers: Record<string, string> = {};
+      if (this.token) {
+        headers['Authorization'] = `Bearer ${this.token}`;
+      }
+      console.log("Headers:", headers);
+      
+      const response = await fetch(`${this.baseURL}${endpoint}`, {
+        method: 'POST',
+        headers: headers,
+        body: formData
+      });
+
+      const responseText = await response.text();
+      console.log(`Response status: ${response.status}`);
+      console.log(`Response text: ${responseText}`);
+      
+      if (!response.ok) {
+        let errorMessage;
+        try {
+          const errorData = JSON.parse(responseText);
+          errorMessage = errorData.error || errorData.message || `API Error: ${response.status}`;
+        } catch (e) {
+          errorMessage = `API Error: ${response.status} - ${responseText || 'No response body'}`;
+        }
+        throw new Error(errorMessage);
+      }
+
+      try {
+        return JSON.parse(responseText) as T;
+      } catch (e) {
+        throw new Error(`Error parsing response: ${responseText}`);
+      }
+    } catch (error) {
+      console.error('API FormData POST request failed:', error);
+      if (error instanceof TypeError && error.message.includes('Network request failed')) {
+        console.error('Network error details:', {
+          url: `${this.baseURL}${endpoint}`,
+          possibleCauses: [
+            '1. Backend server is not running',
+            '2. Incorrect IP address in baseURL',
+            '3. Device cannot connect to the specified IP',
+            '4. Android emulator needs 10.0.2.2 instead of localhost',
+            '5. Physical device needs your computer\'s local IP address'
+          ]
+        });
+      }
+      throw error;
+    }
+  }
+  
+  // Amount specific methods
+  public async createAmount(money: string, screenshot?: ImageAsset): Promise<any> {
+    const formData = new FormData();
+    formData.append('money', money);
+    
+    if (screenshot) {
+      // Append the image to the form data if available
+      const file = {
+        uri: screenshot.uri,
+        type: screenshot.type || 'image/jpeg',
+        name: screenshot.name || 'photo.jpg'
+      };
+      
+      formData.append('screenshot', file as any);
+    }
+    console.log("Token enviado", this.token);
+    return this.postFormData<any>('/amounts', formData);
+  }
+  
+  public async getMyAmounts(): Promise<any> {
+    return this.get<any>('/amounts/me');
   }
 }
 

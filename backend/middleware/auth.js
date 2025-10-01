@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const db = require('../config/db');
 const User = require('../models/User');
 
 // Protect routes - middleware to check if user is authenticated
@@ -13,9 +14,12 @@ exports.protect = async (req, res, next) => {
     // Extract token from header
     token = req.headers.authorization.split(' ')[1];
   }
+
+  console.log("Token recibido en el middleware auth:", token);
   
   // Check if token exists
   if (!token) {
+    console.log("No token provided");
     return res.status(401).json({
       success: false,
       error: 'Not authorized to access this route'
@@ -25,29 +29,34 @@ exports.protect = async (req, res, next) => {
   try {
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
+    console.log("Token decodificado:", decoded);
     // Find user by id
-    req.user = await User.findById(decoded.id);
+    // Cambia decoded.id_user por decoded.id si el token tiene la propiedad 'id'
+    const userId = decoded.id_user || decoded.id;
+    const [rows] = await db.query('SELECT * FROM users WHERE id_user = ?', [userId]);
     
     // If no user found
+    if (rows.length === 0) {
+      return res.status(401).json({
+        success: false,
+        error: 'User not found with this ID'
+      });
+    }
+
+  req.user = await User.findById_user(userId);
+    console.log('Usuario encontrado:', req.user);
+
     if (!req.user) {
       return res.status(401).json({
         success: false,
         error: 'User not found with this ID'
       });
     }
-    
-    // Check if user is active
-    if (!req.user.isActive) {
-      return res.status(401).json({
-        success: false,
-        message: 'Su cuenta ha sido desactivada',
-        error: 'Account has been deactivated'
-      });
-    }
+
     
     next();
   } catch (error) {
+    console.error("Error verifying token:", error);
     return res.status(401).json({
       success: false,
       error: 'Not authorized to access this route'

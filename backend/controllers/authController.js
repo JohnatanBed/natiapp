@@ -81,16 +81,16 @@ exports.register = async (req, res, next) => {
     console.log('[Backend] User registered successfully:', phoneNumber);
     
     // Create and return JWT token
-    const token = generateToken(user.id);
+    const token = generateToken(user.id_user);
     
     res.status(201).json({
       success: true,
       message: 'Usuario registrado exitosamente',
       user: {
-        id: user.id,
+        id_user: user.id_user,
         name: user.name,
         phoneNumber: user.phoneNumber,
-        isActive: user.isActive,
+        role: user.role,
         registeredAt: user.registeredAt
       },
       token
@@ -140,7 +140,7 @@ exports.login = async (req, res, next) => {
     }
     
     // Check if password matches
-    const isMatch = await User.matchPassword(user.id, password);
+    const isMatch = await User.matchPassword(user.id_user, password);
     
     if (!isMatch) {
       console.log('[Backend] Login failed - incorrect password for:', phoneNumber);
@@ -154,15 +154,16 @@ exports.login = async (req, res, next) => {
     console.log('[Backend] Login successful for:', phoneNumber);
     
     // Create and return JWT token
-    const token = generateToken(user.id);
+    const token = generateToken(user.id_user);
     
     res.status(200).json({
       success: true,
       message: 'Login exitoso',
       user: {
-        id: user.id,
+        id_user: user.id_user,
         name: user.name,
         phoneNumber: user.phoneNumber,
+        role: user.role,
         registeredAt: user.registeredAt,
       },
       token
@@ -205,7 +206,7 @@ exports.adminLogin = async (req, res, next) => {
     }
     
     // Check if password matches
-    const isMatch = await Admin.matchPassword(admin.id, password);
+    const isMatch = await Admin.matchPassword(admin.id_admin, password);
     
     if (!isMatch) {
       return res.status(401).json({
@@ -216,17 +217,18 @@ exports.adminLogin = async (req, res, next) => {
     }
     
     // Create and return JWT token
-    const token = generateToken(admin._id);
+    const token = generateToken(admin.id_admin);
     
     res.status(200).json({
       success: true,
       message: 'Login exitoso',
       admin: {
-        id: admin._id,
+        id_admin: admin.id_admin,
         name: admin.name,
         email: admin.email,
+        code_group: admin.code_group,
         role: admin.role,
-        permissions: admin.permissions
+        registeredAt: admin.registeredAt
       },
       token
     });

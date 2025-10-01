@@ -4,7 +4,7 @@ const { query } = require('../config/db');
 // User model class
 class User {
   constructor(userData) {
-    this.id = userData.id;
+    this.id_user = userData.id_user;
     this.name = userData.name;
     this.phoneNumber = userData.phoneNumber;
     this.password = userData.password;
@@ -33,13 +33,13 @@ class User {
 
     // Insert user into database
     const result = await query(
-      'INSERT INTO users (name, phoneNumber, password, role, registeredAt) VALUES (?, ?, ?, ?, NOW())',
+      'INSERT INTO users (name, phoneNumber, password, role) VALUES (?, ?, ?, ?)',
       [userData.name, userData.phoneNumber, userData.password, userData.role || 'user']
     );
 
-    // Return the newly created user with its ID
+    // Return the newly created user with its id_user
     return {
-      id: result.insertId,
+      id_user: result.insertId,
       name: userData.name,
       phoneNumber: userData.phoneNumber,
       role: userData.role || 'user',
@@ -70,9 +70,9 @@ class User {
     return results[0];
   }
 
-  // Find user by ID
-  static async findById(id) {
-    return this.findOne({ id });
+  // Find user by id_user
+  static async findById_user(id_user) {
+    return this.findOne({ id_user });
   }
 
   // Update user
@@ -129,8 +129,8 @@ class User {
   }
 
   // Match password
-  static async matchPassword(userId, enteredPassword) {
-    const user = await this.findById(userId);
+  static async matchPassword(id_user, enteredPassword) {
+    const user = await this.findById_user(id_user);
     if (!user) return false;
     return await bcrypt.compare(enteredPassword, user.password);
   }

@@ -89,11 +89,6 @@ class UserManagementService {
     // Remove all non-numeric characters
     const cleaned = phoneNumber.replace(/\D/g, '');
     
-    // If it starts with 57 (Colombia code), remove it and return 10 digits
-    if (cleaned.startsWith('57') && cleaned.length === 12) {
-      return cleaned.substring(2);
-    }
-    
     // If it's a 10-digit number starting with 3 (Colombian mobile), return as is
     if (cleaned.startsWith('3') && cleaned.length === 10) {
       return cleaned;
@@ -115,7 +110,7 @@ class UserManagementService {
    * @param password - User's password
    * @returns Promise with registration response
    */
-  async registerUser(name: string, phoneNumber: string, password: string = "default123"): Promise<UserRegistrationResponse> {
+  async registerUser(name: string, phoneNumber: string, password: string): Promise<UserRegistrationResponse> {
     try {
       // Validate input parameters
       if (!name?.trim()) {
@@ -455,7 +450,7 @@ class UserManagementService {
       if (error instanceof Error && error.message.includes('401')) {
         return {
           success: false,
-          message: 'Credenciales incorrectas. Verifica tu número y PIN.',
+          message: 'Credenciales incorrectas. Verifica tu PIN.',
           error: 'INVALID_CREDENTIALS'
         };
       }

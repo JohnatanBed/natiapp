@@ -6,20 +6,17 @@
 import React, { useState, useEffect } from 'react';
 import { StatusBar, View, Alert } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
 import LoginScreen from './components/LoginScreen';
 import SignupScreen from './components/SignupScreen';
 import HomeScreen from './components/HomeScreen';
 import AdminLoginScreen from './components/AdminLoginScreen';
 import AdminDashboard from './components/AdminDashboard';
 
-type Screen = 'login' | 'signup' | 'home' | 'adminLogin' | 'adminDashboard';
+const Stack = createStackNavigator();
 
 function App() {
-  const [currentScreen, setCurrentScreen] = useState<Screen>('login');
-  const [userPhoneNumber, setUserPhoneNumber] = useState('');
-  const [_userName, setUserName] = useState('');
-  const [adminData, setAdminData] = useState<any>(null);
-
   // Global error handler
   useEffect(() => {
     const originalHandler = ErrorUtils.getGlobalHandler();
@@ -37,10 +34,10 @@ function App() {
               text: 'Reiniciar',
               onPress: () => {
                 // Reset app state
-                setCurrentScreen('login');
-                setUserPhoneNumber('');
-                setUserName('');
-                setAdminData(null);
+                //setCurrentScreen('login');
+                //setUserPhoneNumber('');
+                //setUserName('');
+                //setAdminData(null);
               }
             }
           ],
@@ -75,8 +72,8 @@ function App() {
         return;
       }
       
-      setUserPhoneNumber(phoneNumber);
-      setCurrentScreen('home');
+      //setUserPhoneNumber(phoneNumber);
+      //setCurrentScreen('home');
     } catch (error) {
       console.error('[App] Error handling login success:', error);
       Alert.alert('Error', 'Error al iniciar sesión. Intenta nuevamente.');
@@ -91,9 +88,9 @@ function App() {
         return;
       }
       
-      setUserPhoneNumber(phoneNumber);
-      setUserName(name);
-      setCurrentScreen('home');
+      //setUserPhoneNumber(phoneNumber);
+      //setUserName(name);
+      //setCurrentScreen('home');
     } catch (error) {
       console.error('[App] Error handling signup success:', error);
       Alert.alert('Error', 'Error al completar el registro. Intenta nuevamente.');
@@ -102,10 +99,10 @@ function App() {
 
   const handleLogout = () => {
     try {
-      setCurrentScreen('login');
-      setUserPhoneNumber('');
-      setUserName('');
-      setAdminData(null);
+      //setCurrentScreen('login');
+      //setUserPhoneNumber('');
+      //setUserName('');
+      //setAdminData(null);
     } catch (error) {
       console.error('[App] Error during logout:', error);
       Alert.alert('Error', 'Error al cerrar sesión. Intenta nuevamente.');
@@ -114,7 +111,7 @@ function App() {
 
   const navigateToSignup = () => {
     try {
-      setCurrentScreen('signup');
+      //setCurrentScreen('signup');
     } catch (error) {
       console.error('[App] Error navigating to signup:', error);
       Alert.alert('Error', 'Error al navegar. Intenta nuevamente.');
@@ -123,7 +120,7 @@ function App() {
 
   const navigateToLogin = () => {
     try {
-      setCurrentScreen('login');
+      //setCurrentScreen('login');
     } catch (error) {
       console.error('[App] Error navigating to login:', error);
       Alert.alert('Error', 'Error al navegar. Intenta nuevamente.');
@@ -132,7 +129,7 @@ function App() {
 
   const navigateToAdminLogin = () => {
     try {
-      setCurrentScreen('adminLogin');
+      //setCurrentScreen('adminLogin');
     } catch (error) {
       console.error('[App] Error navigating to admin login:', error);
       Alert.alert('Error', 'Error al navegar. Intenta nuevamente.');
@@ -147,8 +144,8 @@ function App() {
         return;
       }
       
-      setAdminData(admin);
-      setCurrentScreen('adminDashboard');
+      //setAdminData(admin);
+      //setCurrentScreen('adminDashboard');
     } catch (error) {
       console.error('[App] Error handling admin login success:', error);
       Alert.alert('Error', 'Error al iniciar sesión como administrador. Intenta nuevamente.');
@@ -157,119 +154,67 @@ function App() {
 
   const handleAdminLogout = () => {
     try {
-      setCurrentScreen('login');
-      setAdminData(null);
+      //setCurrentScreen('login');
+      //setAdminData(null);
     } catch (error) {
       console.error('[App] Error during admin logout:', error);
       Alert.alert('Error', 'Error al cerrar sesión. Intenta nuevamente.');
     }
   };
 
-  const renderScreen = () => {
-    try {
-      switch (currentScreen) {
-        case 'login':
-          return (
-            <LoginScreen 
-              onLoginSuccess={handleLoginSuccess}
-              onNavigateToSignup={navigateToSignup}
-              onNavigateToAdminLogin={navigateToAdminLogin}
-            />
-          );
-        case 'signup':
-          return (
-            <SignupScreen 
-              onSignupSuccess={handleSignupSuccess}
-              onBackToLogin={navigateToLogin}
-            />
-          );
-        case 'home':
-          if (!userPhoneNumber) {
-            console.error('[App] No user phone number available for home screen');
-            setCurrentScreen('login');
-            return (
-              <LoginScreen 
-                onLoginSuccess={handleLoginSuccess}
-                onNavigateToSignup={navigateToSignup}
-                onNavigateToAdminLogin={navigateToAdminLogin}
-              />
-            );
-          }
-          return (
-            <HomeScreen 
-              phoneNumber={userPhoneNumber} 
-              onLogout={handleLogout} 
-            />
-          );
-        case 'adminLogin':
-          return (
-            <AdminLoginScreen 
-              onAdminLoginSuccess={handleAdminLoginSuccess}
-              onBackToUserLogin={navigateToLogin}
-            />
-          );
-        case 'adminDashboard':
-          if (!adminData) {
-            console.error('[App] No admin data available for dashboard');
-            setCurrentScreen('adminLogin');
-            return (
-              <AdminLoginScreen 
-                onAdminLoginSuccess={handleAdminLoginSuccess}
-                onBackToUserLogin={navigateToLogin}
-              />
-            );
-          }
-          return (
-            <AdminDashboard 
-              adminData={adminData}
-              onLogout={handleAdminLogout}
-            />
-          );
-        default:
-          console.warn('[App] Unknown screen type:', currentScreen);
-          return (
-            <LoginScreen 
-              onLoginSuccess={handleLoginSuccess}
-              onNavigateToSignup={navigateToSignup}
-              onNavigateToAdminLogin={navigateToAdminLogin}
-            />
-          );
-      }
-    } catch (error) {
-      console.error('[App] Error rendering screen:', error);
-      Alert.alert(
-        'Error de Pantalla', 
-        'Error al cargar la pantalla. Regresando al inicio.',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              setCurrentScreen('login');
-              setUserPhoneNumber('');
-              setUserName('');
-              setAdminData(null);
-            }
-          }
-        ]
-      );
-      
-      // Fallback to login screen
-      return (
-        <LoginScreen 
-          onLoginSuccess={handleLoginSuccess}
-          onNavigateToSignup={navigateToSignup}
-          onNavigateToAdminLogin={navigateToAdminLogin}
-        />
-      );
-    }
-  };
-
   return (
     <SafeAreaProvider>
       <StatusBar barStyle="dark-content" backgroundColor="#f8f9fa" />
-      <View style={{ flex: 1 }}>
-        {renderScreen()}
-      </View>
+      <NavigationContainer>
+        <Stack.Navigator initialRouteName="Login">
+          <Stack.Screen name="Login" options={{ headerShown: false }}>
+            {props => (
+              <LoginScreen 
+                {...props}
+                onLoginSuccess={phoneNumber => props.navigation.replace('Home', { phoneNumber })}
+                onNavigateToSignup={() => props.navigation.navigate('Signup')}
+                onNavigateToAdminLogin={() => props.navigation.navigate('AdminLogin')}
+              />
+            )}
+          </Stack.Screen>
+          <Stack.Screen name="Signup" options={{ headerShown: false }}>
+            {props => (
+              <SignupScreen 
+                {...props}
+                onSignupSuccess={(phoneNumber, name) => props.navigation.replace('Home', { phoneNumber, name })}
+                onBackToLogin={() => props.navigation.goBack()}
+              />
+            )}
+          </Stack.Screen>
+          <Stack.Screen name="Home" options={{ headerShown: false }}>
+            {(props: any) => (
+              <HomeScreen 
+                {...props}
+                phoneNumber={props.route?.params?.phoneNumber}
+                onLogout={() => props.navigation.replace('Login')}
+              />
+            )}
+          </Stack.Screen>
+          <Stack.Screen name="AdminLogin" options={{ headerShown: false }}>
+            {props => (
+              <AdminLoginScreen 
+                {...props}
+                onAdminLoginSuccess={admin => props.navigation.replace('AdminDashboard', { admin })}
+                onBackToUserLogin={() => props.navigation.replace('Login')}
+              />
+            )}
+          </Stack.Screen>
+          <Stack.Screen name="AdminDashboard" options={{ headerShown: false }}>
+            {(props: { route: { params?: { admin?: any } }, navigation: any }) => (
+              <AdminDashboard 
+                {...props}
+                adminData={props.route.params?.admin}
+                onLogout={() => props.navigation.replace('Login')}
+              />
+            )}
+          </Stack.Screen>
+        </Stack.Navigator>
+      </NavigationContainer>
     </SafeAreaProvider>
   );
 }

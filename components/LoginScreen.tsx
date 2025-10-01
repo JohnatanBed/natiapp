@@ -84,13 +84,13 @@ const LoginScreen = ({ onLoginSuccess, onNavigateToSignup, onNavigateToAdminLogi
 
       // Input validation
       if (!phoneNumber?.trim()) {
-        setMessage('Por favor ingresa tu número de celular');
+        setMessage('Ingresa tu número de celular');
         setMessageType('error');
         return;
       }
 
       if (phoneNumber.length !== 10) {
-        setMessage('El número de celular debe tener exactamente 10 dígitos');
+        setMessage('El número celular debe tener 10 dígitos');
         setMessageType('error');
         return;
       }
@@ -146,7 +146,7 @@ const LoginScreen = ({ onLoginSuccess, onNavigateToSignup, onNavigateToAdminLogi
           }, 1000);
         } else {
           // El usuario no existe
-          setMessage('El número no está registrado. Por favor regístrate primero.');
+          setMessage('El número no está registrado.');
           setMessageType('error');
           setIsVerifyingNumber(false);
           return;
@@ -213,13 +213,13 @@ const LoginScreen = ({ onLoginSuccess, onNavigateToSignup, onNavigateToAdminLogi
 
       // Input validation
       if (!code?.trim()) {
-        setMessage('Por favor ingresa tu PIN');
+        setMessage('Ingresa tu PIN');
         setMessageType('error');
         return;
       }
 
       if (code.length !== 4) {
-        setMessage('Por favor ingresa el código de 4 dígitos');
+        setMessage('Ingresa el código de 4 dígitos');
         setMessageType('error');
         return;
       }
@@ -360,7 +360,7 @@ const LoginScreen = ({ onLoginSuccess, onNavigateToSignup, onNavigateToAdminLogi
                 onPress={handleNext}
                 disabled={isVerifyingNumber}>
                 <Text style={loginStyles.buttonText}>
-                  {isVerifyingNumber ? 'Verificando...' : 'Ingresa'}
+                  {isVerifyingNumber ? 'Verificando...' : 'Ingresar'}
                 </Text>
               </TouchableOpacity>
 

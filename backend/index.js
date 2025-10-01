@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const fileUpload = require('express-fileupload');
 const errorHandler = require('./middleware/error');
 require('dotenv').config();
 const { connectDB } = require('./config/db');
@@ -9,6 +10,8 @@ const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const setupRoutes = require('./routes/setupRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const amountRoutes = require('./routes/amountRoutes');
+const groupMemberRoutes = require('./routes/groupMemberRoutes');
 
 // Initialize express app
 const app = express();
@@ -30,6 +33,13 @@ app.use(express.json());
 // Enable CORS
 app.use(cors());
 
+// File upload middleware
+app.use(fileUpload({
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max file size
+  useTempFiles: false,
+  abortOnLimit: true
+}));
+
 // API versioning and root endpoint
 app.get('/', (req, res) => {
   res.json({ 
@@ -43,6 +53,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/setup', setupRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/amounts', amountRoutes);
+app.use('/api/group-members', groupMemberRoutes);
 
 // Error handler middleware
 app.use(errorHandler);
