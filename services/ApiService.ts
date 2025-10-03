@@ -10,7 +10,7 @@ interface ImageAsset {
 
 class ApiService {
 
-  private baseURL: string ='http://192.168.80.17:5000/api';
+  private baseURL: string ='http://192.168.1.7:5000/api';
 
   private token: string | null = null;
 
@@ -21,10 +21,22 @@ class ApiService {
     };
 
     if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`;
+      headers.Authorization = `Bearer ${this.token}`;
     }
 
     return headers;
+  }
+
+  // Ensure token is loaded from storage if not in memory
+  private async ensureTokenLoaded(): Promise<void> {
+    if (!this.token) {
+      try {
+        const storedToken = await AsyncStorage.getItem('natiapp_token');
+        if (storedToken) this.token = storedToken;
+      } catch (e) {
+        console.error('Error ensuring token loaded:', e);
+      }
+    }
   }
 
   // Set authentication token
@@ -63,6 +75,7 @@ class ApiService {
   // GET request helper
   public async get<T>(endpoint: string): Promise<T> {
     try {
+      await this.ensureTokenLoaded();
       console.log(`Sending GET request to: ${this.baseURL}${endpoint}`);
       
       const response = await fetch(`${this.baseURL}${endpoint}`, {
@@ -111,6 +124,7 @@ class ApiService {
   // POST request helper
   public async post<T>(endpoint: string, data: any): Promise<T> {
     try {
+      await this.ensureTokenLoaded();
       console.log(`Sending POST request to: ${this.baseURL}${endpoint}`);
       console.log('Request data:', data);
       
@@ -161,6 +175,7 @@ class ApiService {
   // PUT request helper
   public async put<T>(endpoint: string, data: any): Promise<T> {
     try {
+      await this.ensureTokenLoaded();
       console.log(`Sending PUT request to: ${this.baseURL}${endpoint}`);
       console.log('Request data:', data);
       
@@ -211,6 +226,7 @@ class ApiService {
   // DELETE request helper
   public async delete<T>(endpoint: string): Promise<T> {
     try {
+      await this.ensureTokenLoaded();
       console.log(`Sending DELETE request to: ${this.baseURL}${endpoint}`);
       
       const response = await fetch(`${this.baseURL}${endpoint}`, {
@@ -259,12 +275,13 @@ class ApiService {
   // POST request helper with FormData (for file uploads)
   public async postFormData<T>(endpoint: string, formData: FormData): Promise<T> {
     try {
+      await this.ensureTokenLoaded();
       console.log(`Sending FormData POST request to: ${this.baseURL}${endpoint}`);
       
       // Create headers without Content-Type so the browser sets it automatically with boundary
       const headers: Record<string, string> = {};
       if (this.token) {
-        headers['Authorization'] = `Bearer ${this.token}`;
+        headers.Authorization = `Bearer ${this.token}`;
       }
       console.log("Headers:", headers);
       
@@ -333,6 +350,11 @@ class ApiService {
   
   public async getMyAmounts(): Promise<any> {
     return this.get<any>('/amounts/me');
+  }
+
+  // Get current user's loans
+  public async getMyLoans(): Promise<any> {
+    return this.get<any>('/loans/me');
   }
 }
 

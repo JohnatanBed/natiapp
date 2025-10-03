@@ -1,30 +1,6 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 
-// Helper function to normalize phone number for consistency (10 digits only)
-const normalizePhoneNumber = (phoneNumber) => {
-  // Remove all non-numeric characters
-  const cleaned = phoneNumber.replace(/\D/g, '');
-  
-  // If it starts with 57 (Colombia code), remove it and return 10 digits
-  if (cleaned.startsWith('57') && cleaned.length === 12) {
-    return cleaned.substring(2);
-  }
-  
-  // If it's a 10-digit number starting with 3 (Colombian mobile), return as is
-  if (cleaned.startsWith('3') && cleaned.length === 10) {
-    return cleaned;
-  }
-  
-  // For any other 10-digit number, return as is
-  if (cleaned.length === 10) {
-    return cleaned;
-  }
-  
-  // Return the cleaned number if we can't determine the format
-  return cleaned;
-};
-
 // Helper function to generate JWT token
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -38,10 +14,6 @@ const generateToken = (id) => {
 exports.register = async (req, res, next) => {
   try {
     let { name, phoneNumber, password } = req.body;
-    
-    // Normalize phone number for consistency
-    phoneNumber = normalizePhoneNumber(phoneNumber);
-    console.log('[Backend] Registering user with normalized phone:', phoneNumber);
     
     // Asegurar que password sea un string
     password = String(password);
@@ -77,9 +49,7 @@ exports.register = async (req, res, next) => {
       phoneNumber,
       password
     });
-    
-    console.log('[Backend] User registered successfully:', phoneNumber);
-    
+        
     // Create and return JWT token
     const token = generateToken(user.id_user);
     
@@ -106,11 +76,7 @@ exports.register = async (req, res, next) => {
 exports.login = async (req, res, next) => {
   try {
     let { phoneNumber, password } = req.body;
-    
-    // Normalize phone number for consistency
-    phoneNumber = normalizePhoneNumber(phoneNumber);
-    console.log('[Backend] Login attempt with normalized phone:', phoneNumber);
-    
+
     // Asegurar que password sea un string
     password = String(password);
     
@@ -240,6 +206,13 @@ exports.adminLogin = async (req, res, next) => {
 // @desc    Check if user exists by phone number
 // @route   POST /api/auth/check-user
 // @access  Public
+const normalizePhoneNumber = (phoneNumber) => {
+    // Elimina todos los caracteres no numéricos
+    const cleaned = phoneNumber.replace(/\D/g, '');
+    // Retorna el número normalizado
+    return cleaned;
+};
+
 exports.checkUser = async (req, res, next) => {
   try {
     let { phoneNumber } = req.body;

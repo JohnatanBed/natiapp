@@ -11,7 +11,7 @@ import { loginStyles } from '../styles';
 import { userManagementService } from '../services';
 
 interface LoginScreenProps {
-  onLoginSuccess: (phoneNumber: string) => void;
+  onLoginSuccess: (phoneNumber: string, name: string) => void;
   onNavigateToSignup: () => void;
   onNavigateToAdminLogin: () => void;
 }
@@ -242,7 +242,9 @@ const LoginScreen = ({ onLoginSuccess, onNavigateToSignup, onNavigateToAdminLogi
         
         // Después de un breve retraso, navegar a la pantalla principal
         setTimeout(() => {
-          onLoginSuccess(phoneNumber);
+          const userName = loginResult.user?.name || phoneNumber;
+          console.log('Login successful, user name:', userName);
+          onLoginSuccess(phoneNumber, userName);
         }, 1000);
       } else {
         // Handle specific login errors with better user feedback

@@ -37,7 +37,7 @@ function App() {
                 //setCurrentScreen('login');
                 //setUserPhoneNumber('');
                 //setUserName('');
-                //setAdminData(null);
+                //setAdminData(null);67
               }
             }
           ],
@@ -64,104 +64,6 @@ function App() {
     };
   }, []);
 
-  const handleLoginSuccess = (phoneNumber: string) => {
-    try {
-      if (!phoneNumber?.trim()) {
-        console.error('[App] Invalid phone number received on login success');
-        Alert.alert('Error', 'Error al procesar el login. Intenta nuevamente.');
-        return;
-      }
-      
-      //setUserPhoneNumber(phoneNumber);
-      //setCurrentScreen('home');
-    } catch (error) {
-      console.error('[App] Error handling login success:', error);
-      Alert.alert('Error', 'Error al iniciar sesión. Intenta nuevamente.');
-    }
-  };
-
-  const handleSignupSuccess = (phoneNumber: string, name: string) => {
-    try {
-      if (!phoneNumber?.trim() || !name?.trim()) {
-        console.error('[App] Invalid data received on signup success:', { phoneNumber, name });
-        Alert.alert('Error', 'Error al procesar el registro. Intenta nuevamente.');
-        return;
-      }
-      
-      //setUserPhoneNumber(phoneNumber);
-      //setUserName(name);
-      //setCurrentScreen('home');
-    } catch (error) {
-      console.error('[App] Error handling signup success:', error);
-      Alert.alert('Error', 'Error al completar el registro. Intenta nuevamente.');
-    }
-  };
-
-  const handleLogout = () => {
-    try {
-      //setCurrentScreen('login');
-      //setUserPhoneNumber('');
-      //setUserName('');
-      //setAdminData(null);
-    } catch (error) {
-      console.error('[App] Error during logout:', error);
-      Alert.alert('Error', 'Error al cerrar sesión. Intenta nuevamente.');
-    }
-  };
-
-  const navigateToSignup = () => {
-    try {
-      //setCurrentScreen('signup');
-    } catch (error) {
-      console.error('[App] Error navigating to signup:', error);
-      Alert.alert('Error', 'Error al navegar. Intenta nuevamente.');
-    }
-  };
-
-  const navigateToLogin = () => {
-    try {
-      //setCurrentScreen('login');
-    } catch (error) {
-      console.error('[App] Error navigating to login:', error);
-      Alert.alert('Error', 'Error al navegar. Intenta nuevamente.');
-    }
-  };
-
-  const navigateToAdminLogin = () => {
-    try {
-      //setCurrentScreen('adminLogin');
-    } catch (error) {
-      console.error('[App] Error navigating to admin login:', error);
-      Alert.alert('Error', 'Error al navegar. Intenta nuevamente.');
-    }
-  };
-
-  const handleAdminLoginSuccess = (admin: any) => {
-    try {
-      if (!admin || !admin.id) {
-        console.error('[App] Invalid admin data received on login success:', admin);
-        Alert.alert('Error', 'Error al procesar el login de administrador. Intenta nuevamente.');
-        return;
-      }
-      
-      //setAdminData(admin);
-      //setCurrentScreen('adminDashboard');
-    } catch (error) {
-      console.error('[App] Error handling admin login success:', error);
-      Alert.alert('Error', 'Error al iniciar sesión como administrador. Intenta nuevamente.');
-    }
-  };
-
-  const handleAdminLogout = () => {
-    try {
-      //setCurrentScreen('login');
-      //setAdminData(null);
-    } catch (error) {
-      console.error('[App] Error during admin logout:', error);
-      Alert.alert('Error', 'Error al cerrar sesión. Intenta nuevamente.');
-    }
-  };
-
   return (
     <SafeAreaProvider>
       <StatusBar barStyle="dark-content" backgroundColor="#f8f9fa" />
@@ -171,7 +73,7 @@ function App() {
             {props => (
               <LoginScreen 
                 {...props}
-                onLoginSuccess={phoneNumber => props.navigation.replace('Home', { phoneNumber })}
+                onLoginSuccess={(phoneNumber, name) => props.navigation.replace('Home', { phoneNumber, name })}
                 onNavigateToSignup={() => props.navigation.navigate('Signup')}
                 onNavigateToAdminLogin={() => props.navigation.navigate('AdminLogin')}
               />
@@ -191,6 +93,7 @@ function App() {
               <HomeScreen 
                 {...props}
                 phoneNumber={props.route?.params?.phoneNumber}
+                name={props.route?.params?.name}
                 onLogout={() => props.navigation.replace('Login')}
               />
             )}

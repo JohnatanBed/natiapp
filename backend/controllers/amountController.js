@@ -160,7 +160,7 @@ exports.updateAmount = async (req, res, next) => {
   try {
     const { id_amount } = req.params;
     const { money } = req.body;
-    let screenshot = undefined;
+    let screenshot;
 
     // Check if amount exists
     const amount = await Amount.findById(id_amount);

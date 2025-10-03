@@ -20,7 +20,10 @@ header: {
   },
   content: {
     padding: 20,
-    flex: 1,
+    paddingBottom: 40, // Espacio extra al final para mejor scroll
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
   title: {
    fontSize: 24,
@@ -56,6 +59,7 @@ header: {
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 5,
+    marginBottom: 12,
   },
   currencySymbol: {
     fontSize: 18,
@@ -163,5 +167,59 @@ inputGroup: {
     fontSize: 17,
     fontWeight: '500',
     textAlign: 'center',
-  }
+  },
+  // Estilos para la lista de préstamos
+  loanListContainer: {
+    marginTop: 20,
+  },
+  loanListTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1f2937',
+    marginBottom: 12,
+  },
+  loanItem: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  loanAmount: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1f2937',
+    marginBottom: 8,
+  },
+  loanStatus: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  loanDate: {
+    fontSize: 14,
+    color: '#6b7280',
+  },
+  noLoansText: {
+    fontSize: 16,
+    color: '#6b7280',
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  // Estados de préstamo
+  statusPending: {
+    color: '#f59e0b', // Amarillo para pendiente
+  },
+  statusApproved: {
+    color: '#16a34a', // Verde para aprobado
+  },
+  statusRejected: {
+    color: '#dc2626', // Rojo para rechazado
+  },
 });

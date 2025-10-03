@@ -220,11 +220,6 @@ class UserManagementService {
    * @param password - User's password
    * @returns Promise with login response
    */
-  /**
-   * Check if user exists by phone number
-   * @param phoneNumber - User's phone number
-   * @returns Promise with check result
-   */
   async checkUserExists(phoneNumber: string): Promise<CheckUserResponse> {
     try {
       // Validate input parameters
@@ -238,7 +233,7 @@ class UserManagementService {
       }
 
       // Normalize phone number for consistency
-      const normalizedPhone = this.normalizePhoneNumber(phoneNumber);
+      const normalizedPhone = this.normalizePhoneNumber(phoneNumber); // Asegúrate de usar 'this'
       console.log('[UserManagementService] Checking user existence for normalized phone:', normalizedPhone, 'original:', phoneNumber);
       
       // Additional phone validation
@@ -415,7 +410,7 @@ class UserManagementService {
         // Use the real backend API
         const response = await apiService.post<UserLoginResponse>('/auth/login', {
           phoneNumber: normalizedPhone,
-          password: password.trim()
+          password: password.trim(),
         });
         
         // Store the token if login was successful

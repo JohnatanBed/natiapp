@@ -11,6 +11,7 @@ const userRoutes = require('./routes/userRoutes');
 const setupRoutes = require('./routes/setupRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const amountRoutes = require('./routes/amountRoutes');
+const loanRoutes = require('./routes/loanRoutes');
 const groupMemberRoutes = require('./routes/groupMemberRoutes');
 
 // Initialize express app
@@ -54,6 +55,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/setup', setupRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/amounts', amountRoutes);
+app.use('/api/loans', loanRoutes);
 app.use('/api/group-members', groupMemberRoutes);
 
 // Error handler middleware

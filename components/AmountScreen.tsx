@@ -18,6 +18,7 @@ import { useNavigation } from '@react-navigation/native'
 interface AmountScreenProps {
   phoneNumber: string;
   onBack: () => void;
+  onUpdateTotal?: () => void;
 }
 
 interface ImageAsset {
@@ -26,11 +27,12 @@ interface ImageAsset {
   name?: string;
 }
 
-const AmountScreen = ({ phoneNumber, onBack }: AmountScreenProps) => {
+const AmountScreen = ({ phoneNumber, onBack, onUpdateTotal }: AmountScreenProps) => {
   const [cantidad, setCantidad] = useState('');
   const [loading, setLoading] = useState(false);
   const [imagen, setImagen] = useState<ImageAsset | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [descripcion, setDescripcion] = useState('');
 
   // Fecha y hora actual - solo lectura
   const fechaActual = new Date().toLocaleDateString('es-ES', {
@@ -235,6 +237,10 @@ const AmountScreen = ({ phoneNumber, onBack }: AmountScreenProps) => {
             try {
               const response = await apiService.createAmount(cantidad, imagen || undefined);
               console.log('aporte creado correctamente:', response);
+              // Actualizar el total aportado en HomeScreen
+              if (typeof onUpdateTotal === 'function') {
+                await onUpdateTotal();
+              }
               Alert.alert('Aporte Exitoso', 'Tu aporte ha sido registrado correctamente.', [
                 { text: 'OK', onPress: onBack }
               ],);
@@ -264,11 +270,12 @@ const AmountScreen = ({ phoneNumber, onBack }: AmountScreenProps) => {
   return (
     <ScrollView style={amountStyles.container}>
       <View style={amountStyles.header}>
-          <Text style={amountStyles.title}>
-            Aportes
-            </Text>
+        <Text style={amountStyles.title}>
+          Aportes
+        </Text>
       </View>
       <View style={amountStyles.content}>
+
         <View style={amountStyles.formContainer}>
           <View style={amountStyles.inputGroup}>
             <Text style={amountStyles.label}>Cantidad del aporte *</Text>
@@ -334,6 +341,22 @@ const AmountScreen = ({ phoneNumber, onBack }: AmountScreenProps) => {
             )}
           </View>
 
+          <View style={amountStyles.inputGroup}>
+            <Text style={amountStyles.label}>Descripción (Opcional)</Text>
+            <View style={amountStyles.amountContainer}>
+              <TextInput
+                style={amountStyles.amountInput}
+                placeholder="Escribe una descripción..."
+                placeholderTextColor="#9ca3af"
+                multiline
+                numberOfLines={3}
+                onChangeText={(text) => setDescripcion(text)}
+                value={descripcion}
+              />
+            </View>
+
+          </View>
+
         </View>
         {/*
         <View style={amountStyles.summaryCard}>
@@ -364,6 +387,9 @@ const AmountScreen = ({ phoneNumber, onBack }: AmountScreenProps) => {
           <Text style={amountStyles.amountButtonText}>
             {loading ? 'Procesando...' : 'Realizar aporte'}
           </Text>
+
+
+
         </TouchableOpacity>
 
         <TouchableOpacity

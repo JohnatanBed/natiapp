@@ -13,10 +13,11 @@ import { useFocusEffect } from '@react-navigation/native';
 
 interface HomeScreenProps {
   phoneNumber: string;
+  name: string;
   onLogout: () => void;
 }
 
-const HomeScreen = ({ phoneNumber, onLogout }: HomeScreenProps) => {
+const HomeScreen = ({ phoneNumber, name, onLogout }: HomeScreenProps) => {
   const [message, setMessage] = useState('');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [currentView, setCurrentView] = useState<'home' | 'amount' | 'loan'>('home');
@@ -88,6 +89,7 @@ const HomeScreen = ({ phoneNumber, onLogout }: HomeScreenProps) => {
         <AmountScreen
           phoneNumber={phoneNumber}
           onBack={handleBackToHome}
+          onUpdateTotal={fetchTotalAmount}
         />
       ) : currentView === 'loan' ? (
         <LoanScreen
@@ -98,10 +100,7 @@ const HomeScreen = ({ phoneNumber, onLogout }: HomeScreenProps) => {
         <ScrollView style={homeStyles.container}>
           <View style={homeStyles.header}>
             <Text style={homeStyles.welcomeTitle}>
-              ¡Bienvenido!
-            </Text>
-            <Text style={homeStyles.phoneText}>
-              Celular: {phoneNumber}
+              ¡Bienvenido{name ? `, ${name}` : ''}!
             </Text>
             <TouchableOpacity
               style={homeStyles.logoutButton}
@@ -155,7 +154,7 @@ const HomeScreen = ({ phoneNumber, onLogout }: HomeScreenProps) => {
                 onPress={() => handleMenuOption('Amount')}>
                 <Text style={homeStyles.menuEmoji}>➕</Text>
                 <Text style={homeStyles.menuItemText}>
-                  Aporte
+                  Aportar
                 </Text>
               </TouchableOpacity>
 
@@ -170,33 +169,22 @@ const HomeScreen = ({ phoneNumber, onLogout }: HomeScreenProps) => {
 
               <TouchableOpacity
                 style={homeStyles.menuItem}
-                onPress={() => handleMenuOption('Configuración')}>
-                <Text style={homeStyles.menuEmoji}>⚙️</Text>
+                onPress={() => handleMenuOption('Ver eventos')}>
+                <Text style={homeStyles.menuEmoji}>📅</Text>
                 <Text style={homeStyles.menuItemText}>
-                  Configuración
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={homeStyles.menuItem}
-                onPress={() => handleMenuOption('Notificaciones')}>
-                <Text style={homeStyles.menuEmoji}>🔔</Text>
-                <Text style={homeStyles.menuItemText}>
-                  Notificaciones
+                  Eventos
                 </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={homeStyles.menuItem}
                 onPress={() => handleMenuOption('Historial')}>
-                <Text style={homeStyles.menuEmoji}>📋</Text>
+                <Text style={homeStyles.menuEmoji}>📜</Text>
                 <Text style={homeStyles.menuItemText}>
                   Historial
                 </Text>
               </TouchableOpacity>
-
             </View>
-
           </View>
         </ScrollView>
       )}
