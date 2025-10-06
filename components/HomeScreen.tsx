@@ -10,6 +10,7 @@ import AmountScreen from './AmountScreen';
 import LoanScreen from './LoanScreen';
 import { apiService } from '../services/ApiService';
 import { useFocusEffect } from '@react-navigation/native';
+import HistoryScreen from './HistoryScreen';
 
 interface HomeScreenProps {
   phoneNumber: string;
@@ -20,7 +21,7 @@ interface HomeScreenProps {
 const HomeScreen = ({ phoneNumber, name, onLogout }: HomeScreenProps) => {
   const [message, setMessage] = useState('');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [currentView, setCurrentView] = useState<'home' | 'amount' | 'loan'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'amount' | 'loan' | 'history'>('home');
   const [totalAmount, setTotalAmount] = useState(0);
 
   const fetchTotalAmount = async () => {
@@ -74,6 +75,12 @@ const HomeScreen = ({ phoneNumber, name, onLogout }: HomeScreenProps) => {
       setCurrentView('loan');
       return;
     }
+
+    if (option === 'History') {
+      setCurrentView('history');
+      return;
+    }
+
     setMessage(`Has seleccionado: ${option}`);
     setTimeout(() => setMessage(''), 3000);
   };
@@ -93,6 +100,12 @@ const HomeScreen = ({ phoneNumber, name, onLogout }: HomeScreenProps) => {
         />
       ) : currentView === 'loan' ? (
         <LoanScreen
+          phoneNumber={phoneNumber}
+          onBack={handleBackToHome}
+          handleDelete={(id: number) => {}}
+        />
+      ) : currentView === 'history' ? (
+        <HistoryScreen
           phoneNumber={phoneNumber}
           onBack={handleBackToHome}
         />
@@ -178,7 +191,7 @@ const HomeScreen = ({ phoneNumber, name, onLogout }: HomeScreenProps) => {
 
               <TouchableOpacity
                 style={homeStyles.menuItem}
-                onPress={() => handleMenuOption('Historial')}>
+                onPress={() => handleMenuOption('History')}>
                 <Text style={homeStyles.menuEmoji}>📜</Text>
                 <Text style={homeStyles.menuItemText}>
                   Historial

@@ -9,7 +9,7 @@ export const loanStyles = StyleSheet.create({
 header: {
    backgroundColor: '#16a34a',
    padding: 20,
-   paddingTop: 90,
+   paddingTop: 60,
    alignItems: 'center',
  },
   innerContainer: {
@@ -221,5 +221,9 @@ inputGroup: {
   },
   statusRejected: {
     color: '#dc2626', // Rojo para rechazado
+  },
+  deleteButtonText: {
+    color: 'black',
+    fontSize: 16,
   },
 });

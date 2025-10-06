@@ -6,6 +6,7 @@ import { apiService } from "../services/ApiService";
 interface LoanScreenProps {
     phoneNumber: string;
     onBack: () => void;
+    handleDelete: (id: number) => void;
 }
 
 interface Evaluation {
@@ -21,7 +22,17 @@ const LoanScreen = ({ phoneNumber, onBack }: LoanScreenProps) => {
     const [totalAmount, setTotalAmount] = useState(0);
     const [evaluation, setEvaluation] = useState<Evaluation | null>(null);
     const [submitting, setSubmitting] = useState(false);
-    const [myLoans, setMyLoans] = useState<Array<{ id_loan: number; amount: number; status: string; created_at?: string }>>([]);
+    const [myLoans, setMyLoans] = useState<Array<{
+        request_date: any; id_loan: number; amount: number; status: string; created_at?: string 
+}>>([]);
+    const estadoEnEspañol = (estado: string) => {
+        switch (estado) {
+            case 'pending': return 'Pendiente';
+            case 'approved': return 'Aprobado';
+            case 'rejected': return 'Rechazado';
+            default: return estado;
+        }
+    };
 
     // Obtener el total acumulado del usuario
     useEffect(() => {
@@ -150,6 +161,26 @@ const LoanScreen = ({ phoneNumber, onBack }: LoanScreenProps) => {
 
     const disabled = !loan || submitting || (evaluation ? !evaluation.viable : false);
 
+    const handleDelete = async (id: number) => {
+        try {
+            setSubmitting(true);
+            await apiService.delete(`/loans/${id}`);
+            setMessage('Préstamo eliminado correctamente.');
+            // Refresh loans list after deleting a loan
+            try {
+                const resp = await apiService.get<any>('/loans/me');
+                if (resp && resp.data) setMyLoans(resp.data);
+            } catch (e) {
+                console.error('Error refreshing loans:', e);
+            }
+        } catch {
+            setMessage('Error al eliminar el préstamo.');
+        } finally {
+            setSubmitting(false);
+            setTimeout(() => setMessage(''), 3500);
+        }
+    };
+
     return (
         <ScrollView 
             style={loanStyles.container}
@@ -224,19 +255,45 @@ const LoanScreen = ({ phoneNumber, onBack }: LoanScreenProps) => {
                         <Text style={loanStyles.noLoansText}>No hay préstamos registrados.</Text>
                     ) : (
                         myLoans.map((l) => (
-                            <View key={l.id_loan} style={loanStyles.loanItem}>
-                                <Text style={loanStyles.loanAmount}>Monto: ${l.amount.toLocaleString('es-CO')}</Text>
-                                <Text style={loanStyles.loanStatus}>
-                                    Estado: <Text style={[
-                                        l.status === 'approved' && loanStyles.statusApproved,
-                                        l.status === 'rejected' && loanStyles.statusRejected,
-                                        l.status === 'pending' && loanStyles.statusPending,
-                                    ]}>{l.status}</Text>
-                                </Text>
-                                {l.created_at && (
-                                    <Text style={loanStyles.loanDate}>Solicitado: {new Date(l.created_at).toLocaleString('es-CO')}</Text>
-                                )}
-                            </View>
+                                (() => {
+                                    return (
+                                        <View key={l.id_loan} style={loanStyles.loanItem}>
+                                            <Text style={loanStyles.loanAmount}>Monto: ${Number(l.amount).toLocaleString('es-CO')}</Text>
+                                            <Text style={loanStyles.loanStatus}>
+                                                Estado: <Text style={[
+                                                    l.status === 'approved' && loanStyles.statusApproved,
+                                                    l.status === 'rejected' && loanStyles.statusRejected,
+                                                    l.status === 'pending' && loanStyles.statusPending,
+                                                ]}>{estadoEnEspañol(l.status)}</Text>
+                                            </Text>
+                                            {(l.request_date) && (
+                                                <Text style={loanStyles.loanDate}>
+                                                    Solicitado: {new Date(l.request_date).toLocaleString('es-CO')}
+                                                </Text>
+                                            )}
+                                            <TouchableOpacity
+                                                onPress={() => {
+                                                    Alert.alert(
+                                                        "Eliminar préstamo",
+                                                        "¿Estás seguro de que deseas eliminar este préstamo?",
+                                                        [
+                                                            {
+                                                                text: "Cancelar",
+                                                                style: "cancel"
+                                                            },
+                                                            {
+                                                                text: "Eliminar",
+                                                                onPress: () => handleDelete(l.id_loan)
+                                                            }
+                                                        ]
+                                                    );
+                                                }}
+                                            >
+                                                <Text style={loanStyles.deleteButtonText}>Eliminar</Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    );
+                                })()
                         ))
                     )}
                 </View>

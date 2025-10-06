@@ -9,7 +9,7 @@ export const amountStyles = StyleSheet.create({
   header: {
     backgroundColor: '#16a34a',
     padding: 20,
-    paddingTop: 90,
+    paddingTop: 60,
     alignItems: 'center',
   },
   title: {

@@ -13,6 +13,7 @@ import SignupScreen from './components/SignupScreen';
 import HomeScreen from './components/HomeScreen';
 import AdminLoginScreen from './components/AdminLoginScreen';
 import AdminDashboard from './components/AdminDashboard';
+import LoanScreen from './components/LoanScreen';
 
 const Stack = createStackNavigator();
 
@@ -20,10 +21,10 @@ function App() {
   // Global error handler
   useEffect(() => {
     const originalHandler = ErrorUtils.getGlobalHandler();
-    
+
     ErrorUtils.setGlobalHandler((error, isFatal) => {
       console.error('[App] Global error caught:', error);
-      
+
       // Show user-friendly error message
       if (isFatal) {
         Alert.alert(
@@ -50,7 +51,7 @@ function App() {
           [{ text: 'OK' }]
         );
       }
-      
+
       // Call original handler
       if (originalHandler) {
         originalHandler(error, isFatal);
@@ -71,7 +72,7 @@ function App() {
         <Stack.Navigator initialRouteName="Login">
           <Stack.Screen name="Login" options={{ headerShown: false }}>
             {props => (
-              <LoginScreen 
+              <LoginScreen
                 {...props}
                 onLoginSuccess={(phoneNumber, name) => props.navigation.replace('Home', { phoneNumber, name })}
                 onNavigateToSignup={() => props.navigation.navigate('Signup')}
@@ -81,7 +82,7 @@ function App() {
           </Stack.Screen>
           <Stack.Screen name="Signup" options={{ headerShown: false }}>
             {props => (
-              <SignupScreen 
+              <SignupScreen
                 {...props}
                 onSignupSuccess={(phoneNumber, name) => props.navigation.replace('Home', { phoneNumber, name })}
                 onBackToLogin={() => props.navigation.goBack()}
@@ -90,7 +91,7 @@ function App() {
           </Stack.Screen>
           <Stack.Screen name="Home" options={{ headerShown: false }}>
             {(props: any) => (
-              <HomeScreen 
+              <HomeScreen
                 {...props}
                 phoneNumber={props.route?.params?.phoneNumber}
                 name={props.route?.params?.name}
@@ -100,7 +101,7 @@ function App() {
           </Stack.Screen>
           <Stack.Screen name="AdminLogin" options={{ headerShown: false }}>
             {props => (
-              <AdminLoginScreen 
+              <AdminLoginScreen
                 {...props}
                 onAdminLoginSuccess={admin => props.navigation.replace('AdminDashboard', { admin })}
                 onBackToUserLogin={() => props.navigation.replace('Login')}
@@ -109,7 +110,7 @@ function App() {
           </Stack.Screen>
           <Stack.Screen name="AdminDashboard" options={{ headerShown: false }}>
             {(props: { route: { params?: { admin?: any } }, navigation: any }) => (
-              <AdminDashboard 
+              <AdminDashboard
                 {...props}
                 adminData={props.route.params?.admin}
                 onLogout={() => props.navigation.replace('Login')}

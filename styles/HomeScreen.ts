@@ -8,7 +8,7 @@ export const homeStyles = StyleSheet.create({
   header: {
     backgroundColor: '#16a34a',
     padding: 20,
-    paddingTop: 80,
+    paddingTop: 60,
     alignItems: 'center',
   },
   welcomeTitle: {
@@ -16,6 +16,7 @@ export const homeStyles = StyleSheet.create({
     fontWeight: 'bold',
     color: 'white',
     marginBottom: 8,
+    textAlign: 'center',
   },
   phoneText: {
     fontSize: 16,

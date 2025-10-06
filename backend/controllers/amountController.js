@@ -112,7 +112,8 @@ exports.getMyAmounts = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: 'Mis aportes recuperados exitosamente',
-      total
+      total,
+      data: amounts // Ahora incluye la lista de aportes
     });
   } catch (error) {
     next(error);
