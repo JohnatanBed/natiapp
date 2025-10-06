@@ -11,6 +11,8 @@ header: {
    padding: 20,
    paddingTop: 60,
    alignItems: 'center',
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
  },
   innerContainer: {
     flex: 1,

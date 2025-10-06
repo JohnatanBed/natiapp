@@ -13,6 +13,8 @@ export const historyStyles = StyleSheet.create({
         padding: 20,
         paddingTop: 60,
         alignItems: 'center',
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
     },
     title: {
         fontSize: 24,

@@ -4,6 +4,7 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
+  Modal,
 } from 'react-native';
 import { homeStyles } from '../styles';
 import AmountScreen from './AmountScreen';
@@ -102,7 +103,7 @@ const HomeScreen = ({ phoneNumber, name, onLogout }: HomeScreenProps) => {
         <LoanScreen
           phoneNumber={phoneNumber}
           onBack={handleBackToHome}
-          handleDelete={(id: number) => {}}
+          handleDelete={(id: number) => { }}
         />
       ) : currentView === 'history' ? (
         <HistoryScreen
@@ -112,38 +113,52 @@ const HomeScreen = ({ phoneNumber, name, onLogout }: HomeScreenProps) => {
       ) : (
         <ScrollView style={homeStyles.container}>
           <View style={homeStyles.header}>
-            <Text style={homeStyles.welcomeTitle}>
-              ¡Bienvenido{name ? `, ${name}` : ''}!
-            </Text>
-            <TouchableOpacity
-              style={homeStyles.logoutButton}
-              onPress={handleLogout}>
-              <Text style={homeStyles.logoutButtonText}>
-                Cerrar Sesión
+            <View style={homeStyles.headerTop}>
+              <View style={homeStyles.welcomeContainer}>
+                <Text style={homeStyles.welcomeTitle}>
+                  ¡Bienvenido!
+                </Text>
+                <Text style={homeStyles.userName}>
+                  {name || 'Usuario'}
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={homeStyles.logoutButton}
+                onPress={handleLogout}>
+                <Text style={homeStyles.logoutButtonText}>
+                  Cerrar Sesión
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={homeStyles.totalCard}>
+              <Text style={homeStyles.totalLabel}>Total Aportado</Text>
+              <Text style={homeStyles.totalAmountText}>
+                ${totalAmount.toLocaleString('es-CO')}
               </Text>
-            </TouchableOpacity>
+            </View>
           </View>
 
           <View style={homeStyles.content}>
-            {showLogoutConfirm && (
-              <View style={homeStyles.messageContainer}>
-                <Text style={homeStyles.messageText}>
-                  ¿Estás seguro que deseas cerrar sesión?
-                </Text>
-                <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 12, gap: 12 }}>
-                  <TouchableOpacity
-                    onPress={cancelLogout}
-                    style={{ paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#6b7280', borderRadius: 6 }}>
-                    <Text style={{ color: 'white', fontWeight: '600' }}>Cancelar</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={confirmLogout}
-                    style={{ paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#dc2626', borderRadius: 6 }}>
-                    <Text style={{ color: 'white', fontWeight: '600' }}>Cerrar Sesión</Text>
-                  </TouchableOpacity>
+            <Modal
+              transparent={true}
+              visible={showLogoutConfirm}
+              animationType="fade"
+            >
+              <View style={homeStyles.modalContainer}>
+                <View style={homeStyles.modalContent}>
+                  <Text style={homeStyles.messageText}>¿Estás seguro que deseas cerrar sesión?</Text>
+                  <View style={homeStyles.confirmButtons}>
+                    <TouchableOpacity onPress={cancelLogout} style={homeStyles.cancelButton}>
+                      <Text style={homeStyles.cancelButtonText}>Cancelar</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={confirmLogout} style={homeStyles.confirmButton}>
+                      <Text style={homeStyles.confirmButtonText}>Cerrar Sesión</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </View>
-            )}
+            </Modal>
 
             {message !== '' && !showLogoutConfirm && (
               <View style={homeStyles.messageContainer}>
@@ -152,14 +167,6 @@ const HomeScreen = ({ phoneNumber, name, onLogout }: HomeScreenProps) => {
                 </Text>
               </View>
             )}
-
-            <Text style={homeStyles.menuTitle}>
-              Menú Principal
-            </Text>
-
-            <Text style={homeStyles.totalAmountText}>
-              Total Aportado: ${totalAmount.toLocaleString('es-CO')}
-            </Text>
 
             <View style={homeStyles.menuGrid}>
               <TouchableOpacity

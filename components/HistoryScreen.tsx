@@ -42,7 +42,7 @@ const HistoryScreen = ({ phoneNumber, onBack }: HistoryScreenProps) => {
             keyboardShouldPersistTaps="handled"
         >
             <View style={historyStyles.header}>
-                <Text style={historyStyles.title}>Historial de Transacciones</Text>
+                <Text style={historyStyles.title}>Historial de aportes</Text>
             </View>
 
             {loading ? (
