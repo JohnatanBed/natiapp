@@ -7,7 +7,7 @@ const User = require('../models/User');
 exports.createAmount = async (req, res, next) => {
   try {
     const { money } = req.body;
-    const user_id = req.user.id_user;
+    const user_id = req.isAdmin ? req.user.id_admin : req.user.id_user;
     let screenshot = null;
 
     // Handle screenshot if provided
@@ -79,7 +79,8 @@ exports.getAmountsByUserId = async (req, res, next) => {
     }
 
     // Authorization check: admin or self
-    if (req.user.role !== 'admin' && req.user.id_user !== parseInt(user_id)) {
+    const currentUserId = req.isAdmin ? req.user.id_admin : req.user.id_user;
+    if (!req.isAdmin && currentUserId !== parseInt(user_id)) {
       return res.status(403).json({
         success: false,
         message: 'No está autorizado para ver estos aportes',
@@ -105,7 +106,17 @@ exports.getAmountsByUserId = async (req, res, next) => {
 // @access  Private
 exports.getMyAmounts = async (req, res, next) => {
   try {
-    const user_id = req.user.id_user;
+    // Check if user is admin or regular user
+    const user_id = req.isAdmin ? req.user.id_admin : req.user.id_user;
+    
+    // Validate that user_id exists
+    if (!user_id) {
+      return res.status(400).json({
+        success: false,
+        error: 'User ID not found in request'
+      });
+    }
+    
     const amounts = await Amount.findByUserId(user_id);
     const total = await Amount.getTotalByUserId(user_id);
 
@@ -137,7 +148,8 @@ exports.getAmountById = async (req, res, next) => {
     }
 
     // Authorization check: admin or owner
-    if (req.user.role !== 'admin' && req.user.id_user !== amount.user_id) {
+    const currentUserId = req.isAdmin ? req.user.id_admin : req.user.id_user;
+    if (!req.isAdmin && currentUserId !== amount.user_id) {
       return res.status(403).json({
         success: false,
         message: 'No está autorizado para ver este aporte',
@@ -174,7 +186,7 @@ exports.updateAmount = async (req, res, next) => {
     }
 
     // Authorization check: admin only
-    if (req.user.role !== 'admin') {
+    if (!req.isAdmin) {
       return res.status(403).json({
         success: false,
         message: 'No está autorizado para actualizar aportes',
@@ -233,7 +245,7 @@ exports.deleteAmount = async (req, res, next) => {
     }
 
     // Authorization check: admin only
-    if (req.user.role !== 'admin') {
+    if (!req.isAdmin) {
       return res.status(403).json({
         success: false,
         message: 'No está autorizado para eliminar aportes',
@@ -259,7 +271,7 @@ exports.deleteAmount = async (req, res, next) => {
 exports.getTotalAmount = async (req, res, next) => {
   try {
     // Authorization check: admin only
-    if (req.user.role !== 'admin') {
+    if (!req.isAdmin) {
       return res.status(403).json({
         success: false,
         message: 'No está autorizado para ver el total de aportes',

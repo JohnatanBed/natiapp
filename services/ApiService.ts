@@ -10,7 +10,7 @@ interface ImageAsset {
 
 class ApiService {
 
-  private baseURL: string ='http://192.168.1.7:5000/api';
+  private baseURL: string ='http://192.168.20.76:5000/api';
 
   private token: string | null = null;
 
@@ -76,16 +76,20 @@ class ApiService {
   public async get<T>(endpoint: string): Promise<T> {
     try {
       await this.ensureTokenLoaded();
-      console.log(`Sending GET request to: ${this.baseURL}${endpoint}`);
+      console.log(`[ApiService GET] Request to: ${this.baseURL}${endpoint}`);
+      console.log(`[ApiService GET] Headers:`, this.getHeaders());
       
       const response = await fetch(`${this.baseURL}${endpoint}`, {
         method: 'GET',
         headers: this.getHeaders()
       });
 
+      console.log(`[ApiService GET] Response status: ${response.status}`);
+      console.log(`[ApiService GET] Response ok: ${response.ok}`);
+      
       const responseText = await response.text();
-      console.log(`Response status: ${response.status}`);
-      console.log(`Response text: ${responseText}`);
+      console.log(`[ApiService GET] Response text length: ${responseText.length}`);
+      console.log(`[ApiService GET] Response text:`, responseText);
       
       if (!response.ok) {
         let errorMessage;

@@ -12,6 +12,7 @@ import LoginScreen from './components/LoginScreen';
 import SignupScreen from './components/SignupScreen';
 import HomeScreen from './components/HomeScreen';
 import AdminLoginScreen from './components/AdminLoginScreen';
+import AdminSignupScreen from './components/AdminSignupScreen';
 import AdminDashboard from './components/AdminDashboard';
 import LoanScreen from './components/LoanScreen';
 
@@ -105,6 +106,16 @@ function App() {
                 {...props}
                 onAdminLoginSuccess={admin => props.navigation.replace('AdminDashboard', { admin })}
                 onBackToUserLogin={() => props.navigation.replace('Login')}
+                onNavigateToAdminSignup={() => props.navigation.navigate('AdminSignup')}
+              />
+            )}
+          </Stack.Screen>
+          <Stack.Screen name="AdminSignup" options={{ headerShown: false }}>
+            {props => (
+              <AdminSignupScreen
+                {...props}
+                onAdminSignupSuccess={admin => props.navigation.replace('AdminDashboard', { admin })}
+                onBackToAdminLogin={() => props.navigation.goBack()}
               />
             )}
           </Stack.Screen>

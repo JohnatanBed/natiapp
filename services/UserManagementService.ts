@@ -3,10 +3,13 @@
 import { apiService } from './ApiService';
 
 export interface User {
-  id: string;
+  id?: string;
+  id_user?: number;
   name: string;
   phoneNumber: string;
-  isActive: boolean;
+  isActive?: boolean;
+  role?: string;
+  code_group?: string;
   registeredAt: Date;
   lastLogin?: Date;
 }
@@ -53,6 +56,14 @@ export interface AdminLoginResponse {
   token?: string;
 }
 
+export interface AdminRegisterResponse {
+  success: boolean;
+  message: string;
+  admin?: AdminUser;
+  error?: string;
+  token?: string;
+}
+
 export interface UserListResponse {
   success: boolean;
   users?: User[];
@@ -62,6 +73,17 @@ export interface UserListResponse {
 export interface UserStatusToggleResponse {
   success: boolean;
   message: string;
+  error?: string;
+}
+
+export interface JoinGroupResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    code_group: string;
+    admin_name: string;
+    union_date?: Date;
+  };
   error?: string;
 }
 
@@ -258,7 +280,7 @@ class UserManagementService {
                   exists: true,
                   message: 'Usuario encontrado',
                   user: {
-                    id: user.id,
+                    id: user.id || user.id_user?.toString() || '',
                     phoneNumber: user.phoneNumber
                   }
                 });
@@ -622,6 +644,177 @@ class UserManagementService {
   }
 
   /**
+   * Admin registration
+   * @param name - Admin name
+   * @param email - Admin email
+   * @param password - Admin password
+   * @param codeGroup - Admin code group
+   * @returns Promise with admin registration response
+   */
+  async adminRegister(name: string, email: string, password: string, codeGroup: string): Promise<AdminRegisterResponse> {
+    try {
+      // Validate input parameters
+      if (!name?.trim()) {
+        return {
+          success: false,
+          message: 'El nombre es requerido',
+          error: 'INVALID_NAME'
+        };
+      }
+
+      if (!email?.trim()) {
+        return {
+          success: false,
+          message: 'El email es requerido',
+          error: 'INVALID_EMAIL'
+        };
+      }
+
+      if (!password?.trim()) {
+        return {
+          success: false,
+          message: 'La contraseña es requerida',
+          error: 'INVALID_PASSWORD'
+        };
+      }
+
+      if (!codeGroup?.trim()) {
+        return {
+          success: false,
+          message: 'El código de grupo es requerido',
+          error: 'INVALID_CODE_GROUP'
+        };
+      }
+
+      // Email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return {
+          success: false,
+          message: 'Por favor ingresa un email válido',
+          error: 'INVALID_EMAIL_FORMAT'
+        };
+      }
+
+      // Password length validation
+      if (password.length < 6) {
+        return {
+          success: false,
+          message: 'La contraseña debe tener al menos 6 caracteres',
+          error: 'PASSWORD_TOO_SHORT'
+        };
+      }
+
+      // Code group length validation
+      if (codeGroup.length < 4) {
+        return {
+          success: false,
+          message: 'El código de grupo debe tener al menos 4 caracteres',
+          error: 'CODE_GROUP_TOO_SHORT'
+        };
+      }
+
+      if (this.isDevelopment) {
+        // In development, simulate API call
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            try {
+              // Check if email already exists
+              if (this.admins.has(email.toLowerCase())) {
+                resolve({
+                  success: false,
+                  message: 'Este email ya está registrado',
+                  error: 'EMAIL_EXISTS'
+                });
+                return;
+              }
+
+              // Create new admin
+              const newAdmin: AdminUser = {
+                id: `admin-${Date.now()}`,
+                name: name.trim(),
+                email: email.trim().toLowerCase(),
+                role: 'admin'
+              };
+
+              this.admins.set(email.toLowerCase(), newAdmin);
+
+              resolve({
+                success: true,
+                message: 'Administrador registrado exitosamente',
+                admin: newAdmin
+              });
+            } catch (devError) {
+              console.error('[UserManagementService] Development mode error:', devError);
+              resolve({
+                success: false,
+                message: 'Error interno del sistema',
+                error: 'DEVELOPMENT_ERROR'
+              });
+            }
+          }, 1000);
+        });
+      } else {
+        // Use the real backend API
+        const response = await apiService.post<AdminRegisterResponse>('/auth/admin-register', {
+          name: name.trim(),
+          email: email.trim().toLowerCase(),
+          password: password.trim(),
+          code_group: codeGroup.trim()
+        });
+        
+        // Store the token if registration was successful
+        if (response.success && response.token) {
+          await apiService.setToken(response.token);
+        }
+        
+        return response;
+      }
+    } catch (error) {
+      console.error('[UserManagementService] Admin registration error:', error);
+      
+      // Handle specific error types
+      if (error instanceof TypeError && error.message.includes('Network request failed')) {
+        return {
+          success: false,
+          message: 'Error de conexión. Verifica tu conexión a internet.',
+          error: 'NETWORK_ERROR'
+        };
+      }
+
+      if (error instanceof Error && error.message.includes('timeout')) {
+        return {
+          success: false,
+          message: 'El servidor está tardando en responder. Intenta nuevamente.',
+          error: 'TIMEOUT_ERROR'
+        };
+      }
+
+      if (error instanceof Error && error.message.includes('400')) {
+        return {
+          success: false,
+          message: 'Datos inválidos. Verifica la información ingresada.',
+          error: 'INVALID_DATA'
+        };
+      }
+
+      if (error instanceof Error && error.message.includes('500')) {
+        return {
+          success: false,
+          message: 'Error interno del servidor. Intenta más tarde.',
+          error: 'SERVER_ERROR'
+        };
+      }
+
+      return {
+        success: false,
+        message: 'Error al registrar administrador. Intenta nuevamente.',
+        error: error instanceof Error ? error.message : 'Admin registration failed'
+      };
+    }
+  }
+
+  /**
    * Get all users (admin only)
    * @returns Promise with user list response
    */
@@ -647,8 +840,8 @@ class UserManagementService {
           }, 500);
         });
       } else {
-        // Use the real backend API
-        const response = await apiService.get<UserListResponse>('/users');
+        // Use the real backend API - admin route
+        const response = await apiService.get<UserListResponse>('/admin/users');
         return response;
       }
     } catch (error) {
@@ -746,8 +939,8 @@ class UserManagementService {
           }, 500);
         });
       } else {
-        // Use the real backend API
-        const response = await apiService.put<UserStatusToggleResponse>(`/users/${userId}/status`, {});
+        // Use the real backend API - admin route
+        const response = await apiService.put<UserStatusToggleResponse>(`/admin/users/${userId}/status`, {});
         return response;
       }
     } catch (error) {
@@ -838,6 +1031,110 @@ class UserManagementService {
     } catch (error) {
       console.error('Error checking user existence:', error);
       return false;
+    }
+  }
+
+  /**
+   * Join a group using admin's code_group
+   * @param codeGroup - Admin's group code
+   * @returns Promise with join group response
+   */
+  async joinGroup(codeGroup: string): Promise<JoinGroupResponse> {
+    try {
+      // Validate input
+      if (!codeGroup?.trim()) {
+        return {
+          success: false,
+          message: 'El código de grupo es requerido',
+          error: 'CODE_GROUP_REQUIRED'
+        };
+      }
+
+      if (this.isDevelopment) {
+        // In development, simulate API call
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            // Mock validation - check if an admin with this code exists
+            const adminExists = Array.from(this.admins.values()).some(
+              admin => (admin as any).code_group === codeGroup.trim()
+            );
+
+            if (!adminExists) {
+              resolve({
+                success: false,
+                message: 'El código de grupo no existe',
+                error: 'INVALID_CODE_GROUP'
+              });
+              return;
+            }
+
+            resolve({
+              success: true,
+              message: 'Te has unido al grupo exitosamente',
+              data: {
+                code_group: codeGroup.trim(),
+                admin_name: 'Administrador Demo'
+              }
+            });
+          }, 500);
+        });
+      } else {
+        // Use the real backend API
+        const response = await apiService.post<JoinGroupResponse>('/users/join-group', {
+          code_group: codeGroup.trim()
+        });
+        
+        return response;
+      }
+    } catch (error) {
+      console.error('[UserManagementService] Join group error:', error);
+      
+      // Handle specific error types
+      if (error instanceof TypeError && error.message.includes('Network request failed')) {
+        return {
+          success: false,
+          message: 'Error de conexión. Verifica tu conexión a internet.',
+          error: 'NETWORK_ERROR'
+        };
+      }
+
+      if (error instanceof Error && error.message.includes('timeout')) {
+        return {
+          success: false,
+          message: 'El servidor está tardando en responder. Intenta nuevamente.',
+          error: 'TIMEOUT_ERROR'
+        };
+      }
+
+      if (error instanceof Error && error.message.includes('404')) {
+        return {
+          success: false,
+          message: 'El código de grupo no existe.',
+          error: 'INVALID_CODE_GROUP'
+        };
+      }
+
+      if (error instanceof Error && error.message.includes('401')) {
+        return {
+          success: false,
+          message: 'Debes iniciar sesión para unirte a un grupo.',
+          error: 'UNAUTHORIZED'
+        };
+      }
+
+      if (error instanceof Error && error.message.includes('400')) {
+        return {
+          success: false,
+          message: 'Ya perteneces a este grupo.',
+          error: 'ALREADY_MEMBER'
+        };
+      }
+
+      return {
+        success: false,
+        message: 'Error al unirse al grupo. Intenta nuevamente.',
+        error: error instanceof Error ? error.message : 'Join group failed'
+      };
     }
   }
 

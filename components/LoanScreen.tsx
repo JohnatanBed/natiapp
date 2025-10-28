@@ -23,8 +23,8 @@ const LoanScreen = ({ phoneNumber, onBack }: LoanScreenProps) => {
     const [evaluation, setEvaluation] = useState<Evaluation | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const [myLoans, setMyLoans] = useState<Array<{
-        request_date: any; id_loan: number; amount: number; status: string; created_at?: string 
-}>>([]);
+        request_date: any; id_loan: number; amount: number; status: string; created_at?: string
+    }>>([]);
     const estadoEnEspañol = (estado: string) => {
         switch (estado) {
             case 'pending': return 'Pendiente';
@@ -62,20 +62,21 @@ const LoanScreen = ({ phoneNumber, onBack }: LoanScreenProps) => {
     // Reglas de préstamo
     const evaluateLoanRequest = (requested: number, currentTotal: number): Evaluation => {
         const maxPercentage = 0.5;        // 50% del acumulado
-        const minLoan = 100000;           // mínimo
-        const hardCap = currentTotal * 0.4;         // tope absoluto
-        if (currentTotal <= 200000) {
+        const minLoan = 50000;           // mínimo
+        const hardCap = currentTotal * 0.5;         // tope absoluto
+        if (currentTotal < 100000) {
             return { viable: false, maxLoan: 0, ratio: 0, reason: 'No tienes acumulado suficiente para préstamos.' };
         }
         const maxLoanByPercentage = Math.floor(currentTotal * maxPercentage);
         const maxLoan = Math.min(maxLoanByPercentage, hardCap);
+        console.log(maxLoan)
         const ratio = requested / currentTotal;
 
         if (requested < minLoan)
-            return { viable: false, maxLoan, ratio, reason: `Mínimo: $${formatCurrency(minLoan)}` };
+            return { viable: false, maxLoan, ratio, reason: `El monto debe ser superior a $${formatCurrency(minLoan)}` };
 
         if (requested > hardCap)
-            return { viable: false, maxLoan, ratio, reason: `Tope absoluto: $${formatCurrency(hardCap)}` };
+            return { viable: false, maxLoan, ratio, reason: `El monto no debe superar los $${formatCurrency(hardCap)}` };
 
         if (requested > maxLoan)
             return {
@@ -122,13 +123,13 @@ const LoanScreen = ({ phoneNumber, onBack }: LoanScreenProps) => {
                             setMessage('Préstamo solicitado correctamente.');
                             setLoan('');
                             setEvaluation(null);
-                                    // Refresh loans list after creating a loan
-                                    try {
-                                        const resp = await apiService.get<any>('/loans/me');
-                                        if (resp && resp.data) setMyLoans(resp.data);
-                                    } catch (e) {
-                                        console.error('Error refreshing loans:', e);
-                                    }
+                            // Refresh loans list after creating a loan
+                            try {
+                                const resp = await apiService.get<any>('/loans/me');
+                                if (resp && resp.data) setMyLoans(resp.data);
+                            } catch (e) {
+                                console.error('Error refreshing loans:', e);
+                            }
                         } catch {
                             setMessage('Error al solicitar el préstamo.');
                         } finally {
@@ -182,7 +183,7 @@ const LoanScreen = ({ phoneNumber, onBack }: LoanScreenProps) => {
     };
 
     return (
-        <ScrollView 
+        <ScrollView
             style={loanStyles.container}
             contentContainerStyle={loanStyles.scrollContent}
             showsVerticalScrollIndicator={true}
@@ -255,45 +256,45 @@ const LoanScreen = ({ phoneNumber, onBack }: LoanScreenProps) => {
                         <Text style={loanStyles.noLoansText}>No hay préstamos registrados.</Text>
                     ) : (
                         myLoans.map((l) => (
-                                (() => {
-                                    return (
-                                        <View key={l.id_loan} style={loanStyles.loanItem}>
-                                            <Text style={loanStyles.loanAmount}>Monto: ${Number(l.amount).toLocaleString('es-CO')}</Text>
-                                            <Text style={loanStyles.loanStatus}>
-                                                Estado: <Text style={[
-                                                    l.status === 'approved' && loanStyles.statusApproved,
-                                                    l.status === 'rejected' && loanStyles.statusRejected,
-                                                    l.status === 'pending' && loanStyles.statusPending,
-                                                ]}>{estadoEnEspañol(l.status)}</Text>
+                            (() => {
+                                return (
+                                    <View key={l.id_loan} style={loanStyles.loanItem}>
+                                        <Text style={loanStyles.loanAmount}>Monto: ${Number(l.amount).toLocaleString('es-CO')}</Text>
+                                        <Text style={loanStyles.loanStatus}>
+                                            Estado: <Text style={[
+                                                l.status === 'approved' && loanStyles.statusApproved,
+                                                l.status === 'rejected' && loanStyles.statusRejected,
+                                                l.status === 'pending' && loanStyles.statusPending,
+                                            ]}>{estadoEnEspañol(l.status)}</Text>
+                                        </Text>
+                                        {(l.request_date) && (
+                                            <Text style={loanStyles.loanDate}>
+                                                Solicitado: {new Date(l.request_date).toLocaleString('es-CO')}
                                             </Text>
-                                            {(l.request_date) && (
-                                                <Text style={loanStyles.loanDate}>
-                                                    Solicitado: {new Date(l.request_date).toLocaleString('es-CO')}
-                                                </Text>
-                                            )}
-                                            <TouchableOpacity
-                                                onPress={() => {
-                                                    Alert.alert(
-                                                        "Eliminar préstamo",
-                                                        "¿Estás seguro de que deseas eliminar este préstamo?",
-                                                        [
-                                                            {
-                                                                text: "Cancelar",
-                                                                style: "cancel"
-                                                            },
-                                                            {
-                                                                text: "Eliminar",
-                                                                onPress: () => handleDelete(l.id_loan)
-                                                            }
-                                                        ]
-                                                    );
-                                                }}
-                                            >
-                                                <Text style={loanStyles.deleteButtonText}>Eliminar</Text>
-                                            </TouchableOpacity>
-                                        </View>
-                                    );
-                                })()
+                                        )}
+                                        <TouchableOpacity
+                                            onPress={() => {
+                                                Alert.alert(
+                                                    "Eliminar préstamo",
+                                                    "¿Estás seguro de que deseas eliminar este préstamo?",
+                                                    [
+                                                        {
+                                                            text: "Cancelar",
+                                                            style: "cancel"
+                                                        },
+                                                        {
+                                                            text: "Eliminar",
+                                                            onPress: () => handleDelete(l.id_loan)
+                                                        }
+                                                    ]
+                                                );
+                                            }}
+                                        >
+                                            <Text style={loanStyles.deleteButtonText}>Eliminar</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                );
+                            })()
                         ))
                     )}
                 </View>

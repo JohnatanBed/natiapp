@@ -5,11 +5,15 @@ import {
   TouchableOpacity,
   ScrollView,
   Modal,
+  TextInput,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { homeStyles } from '../styles';
 import AmountScreen from './AmountScreen';
 import LoanScreen from './LoanScreen';
 import { apiService } from '../services/ApiService';
+import { userManagementService } from '../services';
 import { useFocusEffect } from '@react-navigation/native';
 import HistoryScreen from './HistoryScreen';
 
@@ -22,6 +26,11 @@ interface HomeScreenProps {
 const HomeScreen = ({ phoneNumber, name, onLogout }: HomeScreenProps) => {
   const [message, setMessage] = useState('');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showJoinGroupModal, setShowJoinGroupModal] = useState(false);
+  const [codeGroup, setCodeGroup] = useState('');
+  const [isJoining, setIsJoining] = useState(false);
+  const [joinMessage, setJoinMessage] = useState('');
+  const [joinMessageType, setJoinMessageType] = useState<'error' | 'success' | ''>('');
   const [currentView, setCurrentView] = useState<'home' | 'amount' | 'loan' | 'history'>('home');
   const [totalAmount, setTotalAmount] = useState(0);
 
@@ -88,6 +97,69 @@ const HomeScreen = ({ phoneNumber, name, onLogout }: HomeScreenProps) => {
 
   const handleBackToHome = () => {
     setCurrentView('home');
+  };
+
+  const handleJoinGroup = async () => {
+    try {
+      setJoinMessage('');
+      setJoinMessageType('');
+
+      if (!codeGroup?.trim()) {
+        setJoinMessage('Por favor ingresa el código de grupo');
+        setJoinMessageType('error');
+        return;
+      }
+
+      setIsJoining(true);
+      setJoinMessage('Verificando código...');
+      setJoinMessageType('');
+
+      const result = await userManagementService.joinGroup(codeGroup.trim());
+
+      if (result.success) {
+        setJoinMessage(result.message);
+        setJoinMessageType('success');
+        
+        setTimeout(() => {
+          setShowJoinGroupModal(false);
+          setCodeGroup('');
+          setJoinMessage('');
+          setJoinMessageType('');
+          
+          Alert.alert(
+            '¡Éxito!',
+            `Te has unido al grupo de ${result.data?.admin_name || 'administrador'}`,
+            [{ text: 'OK' }]
+          );
+        }, 1500);
+      } else {
+        const errorMessage = result.error === 'INVALID_CODE_GROUP'
+          ? 'El código de grupo no existe. Verifica e intenta nuevamente.'
+          : result.error === 'ALREADY_MEMBER'
+          ? 'Ya perteneces a este grupo.'
+          : result.error === 'NETWORK_ERROR'
+          ? 'Error de conexión. Verifica tu internet.'
+          : result.error === 'UNAUTHORIZED'
+          ? 'Debes iniciar sesión para unirte a un grupo.'
+          : result.message || 'Error al unirse al grupo';
+
+        setJoinMessage(errorMessage);
+        setJoinMessageType('error');
+      }
+    } catch (error) {
+      console.error('[HomeScreen] Error joining group:', error);
+      setJoinMessage('Error inesperado. Intenta nuevamente.');
+      setJoinMessageType('error');
+    } finally {
+      setIsJoining(false);
+    }
+  };
+
+  const handleCancelJoinGroup = () => {
+    setShowJoinGroupModal(false);
+    setCodeGroup('');
+    setJoinMessage('');
+    setJoinMessageType('');
   };
 
 
@@ -160,6 +232,68 @@ const HomeScreen = ({ phoneNumber, name, onLogout }: HomeScreenProps) => {
               </View>
             </Modal>
 
+            <Modal
+              transparent={true}
+              visible={showJoinGroupModal}
+              animationType="fade"
+            >
+              <View style={homeStyles.modalContainer}>
+                <View style={homeStyles.modalContent}>
+                  <Text style={homeStyles.modalTitle}>Unirse a un Grupo</Text>
+                  <Text style={homeStyles.modalSubtitle}>
+                    Ingresa el código compartido por tu administrador
+                  </Text>
+
+                  {joinMessage !== '' && (
+                    <View style={[
+                      homeStyles.joinMessageContainer,
+                      joinMessageType === 'error' && homeStyles.joinErrorContainer,
+                      joinMessageType === 'success' && homeStyles.joinSuccessContainer,
+                    ]}>
+                      <Text style={[
+                        homeStyles.joinMessageText,
+                        joinMessageType === 'error' && homeStyles.joinErrorText,
+                        joinMessageType === 'success' && homeStyles.joinSuccessText,
+                      ]}>
+                        {joinMessage}
+                      </Text>
+                    </View>
+                  )}
+
+                  <TextInput
+                    style={homeStyles.codeInput}
+                    placeholder="Código de grupo"
+                    value={codeGroup}
+                    onChangeText={setCodeGroup}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    editable={!isJoining}
+                  />
+
+                  <View style={homeStyles.confirmButtons}>
+                    <TouchableOpacity 
+                      onPress={handleCancelJoinGroup} 
+                      style={homeStyles.cancelButton}
+                      disabled={isJoining}
+                    >
+                      <Text style={homeStyles.cancelButtonText}>Cancelar</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      onPress={handleJoinGroup} 
+                      style={[homeStyles.confirmButton, isJoining && homeStyles.buttonDisabled]}
+                      disabled={isJoining}
+                    >
+                      {isJoining ? (
+                        <ActivityIndicator color="white" size="small" />
+                      ) : (
+                        <Text style={homeStyles.confirmButtonText}>Unirse</Text>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            </Modal>
+
             {message !== '' && !showLogoutConfirm && (
               <View style={homeStyles.messageContainer}>
                 <Text style={homeStyles.messageText}>
@@ -189,10 +323,10 @@ const HomeScreen = ({ phoneNumber, name, onLogout }: HomeScreenProps) => {
 
               <TouchableOpacity
                 style={homeStyles.menuItem}
-                onPress={() => handleMenuOption('Ver eventos')}>
-                <Text style={homeStyles.menuEmoji}>📅</Text>
+                onPress={() => setShowJoinGroupModal(true)}>
+                <Text style={homeStyles.menuEmoji}>👥</Text>
                 <Text style={homeStyles.menuItemText}>
-                  Eventos
+                  Unirse a Grupo
                 </Text>
               </TouchableOpacity>
 

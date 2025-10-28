@@ -222,4 +222,58 @@ export const homeStyles = StyleSheet.create({
     borderRadius: 10,
     elevation: 5,
   },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1f2937',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  codeInput: {
+    backgroundColor: '#f3f4f6',
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    marginBottom: 16,
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  joinMessageContainer: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  joinErrorContainer: {
+    backgroundColor: '#fee2e2',
+    borderWidth: 1,
+    borderColor: '#fecaca',
+  },
+  joinSuccessContainer: {
+    backgroundColor: '#d1fae5',
+    borderWidth: 1,
+    borderColor: '#a7f3d0',
+  },
+  joinMessageText: {
+    fontSize: 13,
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  joinErrorText: {
+    color: '#dc2626',
+  },
+  joinSuccessText: {
+    color: '#16a34a',
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
 });

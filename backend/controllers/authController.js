@@ -203,6 +203,126 @@ exports.adminLogin = async (req, res, next) => {
   }
 };
 
+// @desc    Register admin
+// @route   POST /api/auth/admin-register
+// @access  Public
+exports.adminRegister = async (req, res, next) => {
+  try {
+    const { name, email, password, code_group } = req.body;
+    
+    // Input validation
+    if (!name?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'El nombre es requerido',
+        error: 'INVALID_NAME'
+      });
+    }
+
+    if (!email?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'El email es requerido',
+        error: 'INVALID_EMAIL'
+      });
+    }
+
+    if (!password?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'La contraseña es requerida',
+        error: 'INVALID_PASSWORD'
+      });
+    }
+
+    if (!code_group?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'El código de grupo es requerido',
+        error: 'INVALID_CODE_GROUP'
+      });
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Por favor ingresa un email válido',
+        error: 'INVALID_EMAIL_FORMAT'
+      });
+    }
+
+    // Password length validation
+    if (password.trim().length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'La contraseña debe tener al menos 6 caracteres',
+        error: 'PASSWORD_TOO_SHORT'
+      });
+    }
+
+    // Code group length validation
+    if (code_group.trim().length < 4) {
+      return res.status(400).json({
+        success: false,
+        message: 'El código de grupo debe tener al menos 4 caracteres',
+        error: 'CODE_GROUP_TOO_SHORT'
+      });
+    }
+    
+    // Use the Admin model to create a new admin
+    const Admin = require('../models/Admin');
+    
+    try {
+      // Create admin
+      const admin = await Admin.create({
+        name: name.trim(),
+        email: email.trim(),
+        password: password.trim(),
+        code_group: code_group.trim(),
+        role: 'admin'
+      });
+      
+      // Create and return JWT token
+      const token = generateToken(admin.id_admin);
+      
+      res.status(201).json({
+        success: true,
+        message: 'Administrador registrado exitosamente',
+        admin: {
+          id_admin: admin.id_admin,
+          name: admin.name,
+          email: admin.email,
+          code_group: admin.code_group,
+          role: admin.role,
+          registeredAt: admin.registeredAt
+        },
+        token
+      });
+    } catch (adminError) {
+      // Handle specific admin creation errors
+      if (adminError.message.includes('email already exists')) {
+        return res.status(400).json({
+          success: false,
+          message: 'Este email ya está registrado',
+          error: 'EMAIL_EXISTS'
+        });
+      } else if (adminError.message.includes('Code group already in use')) {
+        return res.status(400).json({
+          success: false,
+          message: 'Este código de grupo ya está en uso',
+          error: 'CODE_GROUP_EXISTS'
+        });
+      } else {
+        throw adminError; // Re-throw other errors to be handled by error middleware
+      }
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
 // @desc    Check if user exists by phone number
 // @route   POST /api/auth/check-user
 // @access  Public

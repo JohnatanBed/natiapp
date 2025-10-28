@@ -7,7 +7,7 @@ const User = require('../models/User');
 exports.createLoan = async (req, res, next) => {
   try {
     const { amount } = req.body;
-    const user_id = req.user.id_user;
+    const user_id = req.isAdmin ? req.user.id_admin : req.user.id_user;
 
     // Validate amount
     if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
@@ -41,7 +41,7 @@ exports.createLoan = async (req, res, next) => {
 exports.getAllLoans = async (req, res, next) => {
   try {
     // Authorization check: admin only
-    if (req.user.role !== 'admin') {
+    if (!req.isAdmin) {
       return res.status(403).json({
         success: false,
         message: 'No está autorizado para ver todos los préstamos',
@@ -77,7 +77,7 @@ exports.getAllLoans = async (req, res, next) => {
 // @access  Private
 exports.getMyLoans = async (req, res, next) => {
   try {
-    const user_id = req.user.id_user;
+    const user_id = req.isAdmin ? req.user.id_admin : req.user.id_user;
     const loans = await Loan.findByUserId(user_id);
 
     res.status(200).json({
@@ -107,7 +107,8 @@ exports.getLoanById = async (req, res, next) => {
     }
 
     // Authorization check: admin or owner
-    if (req.user.role !== 'admin' && req.user.id_user !== loan.user_id) {
+    const currentUserId = req.isAdmin ? req.user.id_admin : req.user.id_user;
+    if (!req.isAdmin && currentUserId !== loan.user_id) {
       return res.status(403).json({
         success: false,
         message: 'No está autorizado para ver este préstamo',
@@ -134,7 +135,7 @@ exports.updateLoanStatus = async (req, res, next) => {
     const { status } = req.body;
 
     // Authorization check: admin only
-    if (req.user.role !== 'admin') {
+    if (!req.isAdmin) {
       return res.status(403).json({
         success: false,
         message: 'No está autorizado para actualizar el estado de préstamos',
@@ -192,7 +193,8 @@ exports.deleteLoan = async (req, res, next) => {
     }
 
     // Authorization check: admin or owner (only if pending)
-    if (req.user.role !== 'admin' && req.user.id_user !== loan.user_id) {
+    const currentUserId = req.isAdmin ? req.user.id_admin : req.user.id_user;
+    if (!req.isAdmin && currentUserId !== loan.user_id) {
       return res.status(403).json({
         success: false,
         message: 'No está autorizado para eliminar este préstamo',

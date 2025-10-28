@@ -2,7 +2,8 @@ const express = require('express');
 const { 
   register, 
   login, 
-  adminLogin, 
+  adminLogin,
+  adminRegister, 
   getMe,
   checkUser
 } = require('../controllers/authController');
@@ -14,6 +15,7 @@ const router = express.Router();
 router.post('/register', register);
 router.post('/login', login);
 router.post('/admin-login', adminLogin);
+router.post('/admin-register', adminRegister);
 router.post('/check-user', checkUser);
 
 // Protected routes

@@ -38,16 +38,58 @@ exports.getUserStatistics = async (req, res, next) => {
 // @access  Admin only
 exports.getAllUsers = async (req, res, next) => {
   try {
-    const users = await User.find()
-      .select('-__v')
-      .sort({ registeredAt: -1 });
+    // Get admin's code_group and id
+    const adminCodeGroup = req.user.code_group;
+    const adminId = req.user.id_admin;
     
-    res.status(200).json({
+    console.log('[getAllUsers] Admin code_group:', adminCodeGroup);
+    console.log('[getAllUsers] Admin id:', adminId);
+    
+    // Get users from group_members table associated with this admin
+    const GroupMember = require('../models/GroupMember');
+    const groupMembers = await GroupMember.findByAdminId(adminId);
+    
+    console.log('[getAllUsers] Group members found:', groupMembers.length);
+    
+    // Get user IDs from group members
+    const userIds = groupMembers.map(gm => gm.user_id);
+    
+    // If there are no group members, also check by code_group
+    let users = [];
+    
+    if (userIds.length > 0) {
+      // Get user details for all members
+      for (const userId of userIds) {
+        const user = await User.findById_user(userId);
+        if (user) {
+          users.push(user);
+        }
+      }
+    }
+    
+    // Also include users with matching code_group who might not be in group_members yet
+    const usersByCodeGroup = await User.findAll({ code_group: adminCodeGroup });
+    
+    // Merge both lists, avoiding duplicates
+    const allUsers = [...users];
+    for (const user of usersByCodeGroup) {
+      if (!allUsers.find(u => u.id_user === user.id_user)) {
+        allUsers.push(user);
+      }
+    }
+    
+    console.log('[getAllUsers] Total users found:', allUsers.length);
+    console.log('[getAllUsers] Users data:', allUsers);
+    console.log('[getAllUsers] Sending response...');
+    
+    // Send response immediately - frontend expects 'users' not 'data'
+    return res.status(200).json({
       success: true,
-      count: users.length,
-      data: users
+      count: allUsers.length,
+      users: allUsers  // Changed from 'data' to 'users'
     });
   } catch (error) {
+    console.error('[getAllUsers] Error:', error);
     next(error);
   }
 };
@@ -57,12 +99,20 @@ exports.getAllUsers = async (req, res, next) => {
 // @access  Admin only
 exports.getUser = async (req, res, next) => {
   try {
-    const user = await User.findById(req.params.id).select('-__v');
+    const user = await User.findById_user(req.params.id);
     
     if (!user) {
       return res.status(404).json({
         success: false,
         error: 'User not found'
+      });
+    }
+    
+    // Verify the user belongs to the same code_group as admin
+    if (user.code_group !== req.user.code_group) {
+      return res.status(403).json({
+        success: false,
+        error: 'Not authorized to view this user'
       });
     }
     
@@ -82,11 +132,8 @@ exports.updateUserStatus = async (req, res, next) => {
   try {
     const { isActive } = req.body;
     
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      { isActive },
-      { new: true, runValidators: true }
-    );
+    // First, check if user exists
+    const user = await User.findById_user(req.params.id);
     
     if (!user) {
       return res.status(404).json({
@@ -95,9 +142,26 @@ exports.updateUserStatus = async (req, res, next) => {
       });
     }
     
+    // Verify the user belongs to the same code_group as admin
+    if (user.code_group !== req.user.code_group) {
+      return res.status(403).json({
+        success: false,
+        error: 'Not authorized to update this user'
+      });
+    }
+    
+    // Update user status
+    await User.updateOne(
+      { id_user: req.params.id },
+      { active: isActive }
+    );
+    
+    // Get updated user
+    const updatedUser = await User.findById_user(req.params.id);
+    
     res.status(200).json({
       success: true,
-      data: user
+      data: updatedUser
     });
   } catch (error) {
     next(error);

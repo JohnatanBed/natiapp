@@ -50,36 +50,7 @@ const AdminDashboard = ({ adminData, onLogout }: AdminDashboardProps) => {
     loadUsers();
   };
 
-  const handleToggleUserStatus = async (userId: string, userName: string, isActive: boolean) => {
-    Alert.alert(
-      'Cambiar Estado',
-      `¿Estás seguro que deseas ${isActive ? 'desactivar' : 'activar'} a ${userName}?`,
-      [
-        {
-          text: 'Cancelar',
-          style: 'cancel',
-        },
-        {
-          text: 'Confirmar',
-          onPress: async () => {
-            try {
-              const result = await userManagementService.toggleUserStatus(userId);
-              if (result.success) {
-                // Refresh the user list
-                loadUsers();
-                setMessage(`Usuario ${isActive ? 'desactivado' : 'activado'} exitosamente`);
-                setTimeout(() => setMessage(''), 3000);
-              } else {
-                Alert.alert('Error', result.error || 'Error al cambiar estado del usuario');
-              }
-            } catch (error) {
-              Alert.alert('Error', 'Error de conexión');
-            }
-          },
-        },
-      ]
-    );
-  };
+
 
   const handleLogout = () => {
     setShowLogoutConfirm(true);
@@ -106,9 +77,7 @@ const AdminDashboard = ({ adminData, onLogout }: AdminDashboardProps) => {
 
   const getUserStats = () => {
     const totalUsers = users.length;
-    const activeUsers = users.filter(user => user.isActive).length;
-    const inactiveUsers = totalUsers - activeUsers;
-    return { totalUsers, activeUsers, inactiveUsers };
+    return { totalUsers };
   };
 
   const stats = getUserStats();
@@ -195,19 +164,7 @@ const AdminDashboard = ({ adminData, onLogout }: AdminDashboardProps) => {
               <Text style={dashboardStyles.statNumber}>
                 {stats.totalUsers}
               </Text>
-              <Text style={dashboardStyles.statLabel}>Total</Text>
-            </View>
-            <View style={[dashboardStyles.statCard, dashboardStyles.activeCard]}>
-              <Text style={dashboardStyles.statNumber}>
-                {stats.activeUsers}
-              </Text>
-              <Text style={dashboardStyles.statLabel}>Activos</Text>
-            </View>
-            <View style={[dashboardStyles.statCard, dashboardStyles.inactiveCard]}>
-              <Text style={dashboardStyles.statNumber}>
-                {stats.inactiveUsers}
-              </Text>
-              <Text style={dashboardStyles.statLabel}>Inactivos</Text>
+              <Text style={dashboardStyles.statLabel}>Total de Usuarios</Text>
             </View>
           </View>
         </View>
@@ -233,7 +190,7 @@ const AdminDashboard = ({ adminData, onLogout }: AdminDashboardProps) => {
         ) : (
           users.map((user) => (
             <View
-              key={user.id}
+              key={user.id_user || user.id}
               style={{
                 backgroundColor: 'white',
                 borderRadius: 12,
@@ -278,42 +235,6 @@ const AdminDashboard = ({ adminData, onLogout }: AdminDashboardProps) => {
                       Último acceso: {formatDate(user.lastLogin)}
                     </Text>
                   )}
-                </View>
-
-                <View style={{ alignItems: 'flex-end' }}>
-                  <View style={{
-                    backgroundColor: user.isActive ? '#dcfce7' : '#fee2e2',
-                    paddingHorizontal: 8,
-                    paddingVertical: 4,
-                    borderRadius: 6,
-                    marginBottom: 8,
-                  }}>
-                    <Text style={{
-                      fontSize: 12,
-                      fontWeight: '600',
-                      color: user.isActive ? '#16a34a' : '#dc2626',
-                    }}>
-                      {user.isActive ? 'Activo' : 'Inactivo'}
-                    </Text>
-                  </View>
-
-                  <TouchableOpacity
-                    onPress={() => handleToggleUserStatus(user.id, user.name, user.isActive)}
-                    style={{
-                      backgroundColor: user.isActive ? '#dc2626' : '#16a34a',
-                      paddingHorizontal: 12,
-                      paddingVertical: 6,
-                      borderRadius: 6,
-                    }}
-                  >
-                    <Text style={{
-                      fontSize: 12,
-                      fontWeight: '600',
-                      color: 'white',
-                    }}>
-                      {user.isActive ? 'Desactivar' : 'Activar'}
-                    </Text>
-                  </TouchableOpacity>
                 </View>
               </View>
             </View>
@@ -400,28 +321,19 @@ const dashboardStyles = StyleSheet.create({
   },
   statsGrid: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'center',
     gap: 12,
   },
   statCard: {
-    flex: 1,
     alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 12,
+    paddingVertical: 20,
+    paddingHorizontal: 40,
     borderRadius: 12,
     borderWidth: 2,
   },
   totalCard: {
     backgroundColor: '#f8fafc',
     borderColor: '#3b82f6',
-  },
-  activeCard: {
-    backgroundColor: '#f0fdf4',
-    borderColor: '#22c55e',
-  },
-  inactiveCard: {
-    backgroundColor: '#fef2f2',
-    borderColor: '#ef4444',
   },
   statNumber: {
     fontSize: 28,

@@ -30,12 +30,37 @@ exports.protect = async (req, res, next) => {
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     console.log("Token decodificado:", decoded);
-    // Find user by id
-    // Cambia decoded.id_user por decoded.id si el token tiene la propiedad 'id'
-    const userId = decoded.id_user || decoded.id;
-    const [rows] = await db.query('SELECT * FROM users WHERE id_user = ?', [userId]);
     
-    // If no user found
+    // The token contains 'id' which could be id_user or id_admin
+    const tokenId = decoded.id;
+    
+    // Validate that tokenId exists
+    if (!tokenId || tokenId === undefined) {
+      console.log("No ID found in token:", decoded);
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid token: no user ID found'
+      });
+    }
+    
+    console.log("Token ID extraído:", tokenId);
+    
+    // First, try to find in admins table
+    const Admin = require('../models/Admin');
+    const admin = await Admin.findById(tokenId);
+    
+    if (admin) {
+      // User is an admin
+      req.user = admin;
+      req.isAdmin = true;
+      console.log('Administrador encontrado:', admin);
+      return next();
+    }
+    
+    // If not admin, try to find in users table
+    const [rows] = await db.query('SELECT * FROM users WHERE id_user = ?', [tokenId]);
+    
+    // If no user found in either table
     if (rows.length === 0) {
       return res.status(401).json({
         success: false,
@@ -43,7 +68,8 @@ exports.protect = async (req, res, next) => {
       });
     }
 
-  req.user = await User.findById_user(userId);
+    req.user = await User.findById_user(tokenId);
+    req.isAdmin = false;
     console.log('Usuario encontrado:', req.user);
 
     if (!req.user) {
@@ -52,7 +78,6 @@ exports.protect = async (req, res, next) => {
         error: 'User not found with this ID'
       });
     }
-
     
     next();
   } catch (error) {

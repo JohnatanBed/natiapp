@@ -15,9 +15,10 @@ import { userManagementService } from '../services';
 interface AdminLoginScreenProps {
   onAdminLoginSuccess: (adminData: any) => void;
   onBackToUserLogin: () => void;
+  onNavigateToAdminSignup: () => void;
 }
 
-const AdminLoginScreen = ({ onAdminLoginSuccess, onBackToUserLogin }: AdminLoginScreenProps) => {
+const AdminLoginScreen = ({ onAdminLoginSuccess, onBackToUserLogin, onNavigateToAdminSignup }: AdminLoginScreenProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -199,6 +200,16 @@ const AdminLoginScreen = ({ onAdminLoginSuccess, onBackToUserLogin }: AdminLogin
           </TouchableOpacity>
 
           <TouchableOpacity 
+            style={[loginStyles.linkButton, adminInputStyles.signupButton]}
+            onPress={onNavigateToAdminSignup}
+            disabled={isLoading}
+          >
+            <Text style={[loginStyles.linkText, adminInputStyles.signupButtonText]}>
+              ¿No tienes cuenta? Regístrate aquí
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
             style={[loginStyles.linkButton, adminInputStyles.backButton]}
             onPress={onBackToUserLogin}
           >
@@ -264,6 +275,13 @@ const adminInputStyles = StyleSheet.create({
   },
   demoButtonText: {
     color: '#374151',
+    fontWeight: '600',
+  },
+  signupButton: {
+    marginTop: 8,
+  },
+  signupButtonText: {
+    color: '#16a34a',
     fontWeight: '600',
   },
   backButton: {

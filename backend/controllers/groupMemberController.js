@@ -84,7 +84,8 @@ exports.getUserGroups = async (req, res, next) => {
     const includeAdminDetails = req.query.details === 'true';
     
     // Authorization check: admin or self
-    if (req.user && req.user.id_user !== parseInt(user_id) && !req.admin) {
+    const currentUserId = req.isAdmin ? req.user.id_admin : req.user.id_user;
+    if (req.user && currentUserId !== parseInt(user_id) && !req.isAdmin) {
       return res.status(403).json({
         success: false,
         message: 'No está autorizado para ver estos grupos',
@@ -121,7 +122,7 @@ exports.getUserGroups = async (req, res, next) => {
 // @access  Private
 exports.getMyGroups = async (req, res, next) => {
   try {
-    const user_id = req.user.id_user;
+    const user_id = req.isAdmin ? req.user.id_admin : req.user.id_user;
     const includeAdminDetails = req.query.details === 'true';
     
     const groups = await GroupMember.findByUserId(user_id, includeAdminDetails);

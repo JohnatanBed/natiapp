@@ -9,6 +9,7 @@ class User {
     this.phoneNumber = userData.phoneNumber;
     this.password = userData.password;
     this.role = userData.role || 'user';
+    this.code_group = userData.code_group || null;
     this.registeredAt = userData.registeredAt || new Date();
   }
 
@@ -33,8 +34,8 @@ class User {
 
     // Insert user into database
     const result = await query(
-      'INSERT INTO users (name, phoneNumber, password, role) VALUES (?, ?, ?, ?)',
-      [userData.name, userData.phoneNumber, userData.password, userData.role || 'user']
+      'INSERT INTO users (name, phoneNumber, password, role, code_group) VALUES (?, ?, ?, ?, ?)',
+      [userData.name, userData.phoneNumber, userData.password, userData.role || 'user', userData.code_group || null]
     );
 
     // Return the newly created user with its id_user
@@ -43,6 +44,7 @@ class User {
       name: userData.name,
       phoneNumber: userData.phoneNumber,
       role: userData.role || 'user',
+      code_group: userData.code_group || null,
       registeredAt: new Date()
     };
   }
@@ -73,6 +75,32 @@ class User {
   // Find user by id_user
   static async findById_user(id_user) {
     return this.findOne({ id_user });
+  }
+
+  // Find all users with optional filters
+  static async findAll(filters = {}) {
+    let sql = 'SELECT id_user, name, phoneNumber, role, code_group, registeredAt FROM users';
+    const params = [];
+    const conditions = [];
+
+    // Apply filters if provided
+    if (Object.keys(filters).length > 0) {
+      for (const [key, value] of Object.entries(filters)) {
+        conditions.push(`${key} = ?`);
+        params.push(value);
+      }
+      sql += ' WHERE ' + conditions.join(' AND ');
+    }
+
+    sql += ' ORDER BY registeredAt DESC';
+    
+    console.log('User.findAll SQL:', sql);
+    console.log('User.findAll params:', params);
+    
+    const results = await query(sql, params);
+    console.log('User.findAll results count:', results.length);
+    
+    return results;
   }
 
   // Update user
