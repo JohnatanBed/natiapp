@@ -190,14 +190,6 @@ const AdminLoginScreen = ({ onAdminLoginSuccess, onBackToUserLogin, onNavigateTo
         </TouchableOpacity>
 
         <View style={adminInputStyles.linksContainer}>
-          <TouchableOpacity 
-            style={[loginStyles.linkButton, adminInputStyles.demoButton]}
-            onPress={showDemoCredentials}
-          >
-            <Text style={[loginStyles.linkText, adminInputStyles.demoButtonText]}>
-              credenciales demo
-            </Text>
-          </TouchableOpacity>
 
           <TouchableOpacity 
             style={[loginStyles.linkButton, adminInputStyles.signupButton]}

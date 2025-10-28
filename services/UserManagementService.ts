@@ -87,6 +87,16 @@ export interface JoinGroupResponse {
   error?: string;
 }
 
+export interface UserWithAmounts extends User {
+  totalAmounts?: number;
+}
+
+export interface UserAmountResponse {
+  success: boolean;
+  total?: number;
+  error?: string;
+}
+
 class UserManagementService {
   private isDevelopment: boolean = false; // Already set to false to use the actual backend
   private users: Map<string, User> = new Map(); // Mock storage for development
@@ -879,6 +889,46 @@ class UserManagementService {
       return {
         success: false,
         error: 'Error al obtener usuarios. Intenta nuevamente.'
+      };
+    }
+  }
+
+  /**
+   * Get total amounts for a specific user
+   * @param userId - User ID to get amounts for
+   * @returns Promise with user amount response
+   */
+  async getUserTotalAmounts(userId: number): Promise<UserAmountResponse> {
+    try {
+      if (this.isDevelopment) {
+        // In development, simulate API call with random amounts
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            resolve({
+              success: true,
+              total: Math.floor(Math.random() * 100000) + 10000
+            });
+          }, 200);
+        });
+      } else {
+        // Use the real backend API
+        const response = await apiService.get<UserAmountResponse>(`/amounts/user/${userId}`);
+        return response;
+      }
+    } catch (error) {
+      console.error('[UserManagementService] Error fetching user amounts:', error);
+      
+      // Handle specific error types
+      if (error instanceof TypeError && error.message.includes('Network request failed')) {
+        return {
+          success: false,
+          error: 'Error de conexión.'
+        };
+      }
+
+      return {
+        success: false,
+        error: 'Error al obtener aportes del usuario.'
       };
     }
   }

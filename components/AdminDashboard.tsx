@@ -8,9 +8,10 @@ import {
   ActivityIndicator,
   RefreshControl,
   StyleSheet,
+  Modal,
 } from 'react-native';
 import { homeStyles } from '../styles';
-import { User, userManagementService } from '../services';
+import { User, userManagementService, UserWithAmounts } from '../services';
 
 interface AdminDashboardProps {
   adminData: any;
@@ -18,11 +19,13 @@ interface AdminDashboardProps {
 }
 
 const AdminDashboard = ({ adminData, onLogout }: AdminDashboardProps) => {
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<UserWithAmounts[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [message, setMessage] = useState('');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [loadingAmounts, setLoadingAmounts] = useState<Set<number>>(new Set());
+  const [totalAmountsSum, setTotalAmountsSum] = useState<number>(0);
 
   const loadUsers = async () => {
     try {
@@ -30,6 +33,8 @@ const AdminDashboard = ({ adminData, onLogout }: AdminDashboardProps) => {
       if (result.success && result.users) {
         setUsers(result.users);
         setMessage('');
+        // Load amounts for all users
+        loadUserAmounts(result.users);
       } else {
         setMessage(result.error || 'Error al cargar usuarios');
       }
@@ -39,6 +44,46 @@ const AdminDashboard = ({ adminData, onLogout }: AdminDashboardProps) => {
       setIsLoading(false);
       setRefreshing(false);
     }
+  };
+
+  const loadUserAmounts = async (usersList: User[]) => {
+    let grandTotal = 0;
+    
+    // Load amounts for each user
+    for (const user of usersList) {
+      const userId = user.id_user || user.id;
+      if (userId) {
+        setLoadingAmounts(prev => new Set(prev).add(Number(userId)));
+        try {
+          const amountsResult = await userManagementService.getUserTotalAmounts(Number(userId));
+          if (amountsResult.success) {
+            const userTotal = amountsResult.total || 0;
+            grandTotal += userTotal;
+            
+            setUsers(prevUsers => 
+              prevUsers.map(u => {
+                const uId = u.id_user || u.id;
+                if (uId === userId) {
+                  return { ...u, totalAmounts: userTotal };
+                }
+                return u;
+              })
+            );
+          }
+        } catch (error) {
+          console.error(`Error loading amounts for user ${userId}:`, error);
+        } finally {
+          setLoadingAmounts(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(Number(userId));
+            return newSet;
+          });
+        }
+      }
+    }
+    
+    // Update the grand total
+    setTotalAmountsSum(grandTotal);
   };
 
   useEffect(() => {
@@ -75,9 +120,19 @@ const AdminDashboard = ({ adminData, onLogout }: AdminDashboardProps) => {
     });
   };
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
   const getUserStats = () => {
     const totalUsers = users.length;
-    return { totalUsers };
+    const totalAmounts = totalAmountsSum;
+    return { totalUsers, totalAmounts };
   };
 
   const stats = getUserStats();
@@ -100,74 +155,75 @@ const AdminDashboard = ({ adminData, onLogout }: AdminDashboardProps) => {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
-      <View style={[homeStyles.header, dashboardStyles.header]}>
-        <View style={dashboardStyles.adminInfo}>
-          <View style={dashboardStyles.adminTextContainer}>
-            <Text style={[homeStyles.welcomeTitle, dashboardStyles.title]}>
+      <View style={homeStyles.header}>
+        <View style={homeStyles.headerTop}>
+          <View style={homeStyles.welcomeContainer}>
+            <Text style={homeStyles.welcomeTitle}>
               Panel de Administrador
             </Text>
-            <Text style={[homeStyles.phoneText, dashboardStyles.adminName]}>
+            <Text style={homeStyles.userName}>
               {adminData.name}
             </Text>
           </View>
-        </View>
-        <View style={dashboardStyles.logoutContainer}>
           <TouchableOpacity 
-            style={[homeStyles.logoutButton, dashboardStyles.logoutButton]}
+            style={homeStyles.logoutButton}
             onPress={handleLogout}>
             <Text style={homeStyles.logoutButtonText}>
               Cerrar Sesión
             </Text>
           </TouchableOpacity>
         </View>
+
+        <View style={homeStyles.totalCard}>
+          <Text style={homeStyles.totalLabel}>Total de Aportes</Text>
+          <Text style={homeStyles.totalAmountText}>
+            {loadingAmounts.size > 0 ? (
+              <ActivityIndicator size="small" color="#16a34a" />
+            ) : (
+              formatCurrency(totalAmountsSum)
+            )}
+          </Text>
+        </View>
       </View>
 
       <View style={homeStyles.content}>
-        {showLogoutConfirm && (
-          <View style={homeStyles.messageContainer}>
-            <Text style={homeStyles.messageText}>
-              ¿Estás seguro que deseas cerrar sesión?
-            </Text>
-            <View style={{flexDirection: 'row', justifyContent: 'center', marginTop: 12, gap: 12}}>
-              <TouchableOpacity 
-                onPress={cancelLogout}
-                style={{paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#6b7280', borderRadius: 6}}>
-                <Text style={{color: 'white', fontWeight: '600'}}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                onPress={confirmLogout}
-                style={{paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#dc2626', borderRadius: 6}}>
-                <Text style={{color: 'white', fontWeight: '600'}}>Cerrar Sesión</Text>
-              </TouchableOpacity>
+        {/* Modal de confirmación de cierre de sesión */}
+        <Modal
+          transparent={true}
+          visible={showLogoutConfirm}
+          animationType="fade"
+          onRequestClose={cancelLogout}
+        >
+          <View style={homeStyles.modalContainer}>
+            <View style={homeStyles.modalContent}>
+              <Text style={homeStyles.messageText}>
+                ¿Estás seguro que deseas cerrar sesión?
+              </Text>
+              <View style={homeStyles.confirmButtons}>
+                <TouchableOpacity 
+                  onPress={cancelLogout}
+                  style={homeStyles.cancelButton}
+                >
+                  <Text style={homeStyles.cancelButtonText}>Cancelar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  onPress={confirmLogout}
+                  style={homeStyles.confirmButton}
+                >
+                  <Text style={homeStyles.confirmButtonText}>Cerrar Sesión</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        )}
+        </Modal>
         
-        {message !== '' && !showLogoutConfirm && (
+        {message !== '' && (
           <View style={homeStyles.messageContainer}>
             <Text style={homeStyles.messageText}>
               {message}
             </Text>
           </View>
         )}
-
-        {/* Estadísticas */}
-        <View style={dashboardStyles.statsContainer}>
-          <View style={dashboardStyles.statsHeader}>
-            <Text style={dashboardStyles.statsTitle}>
-              Estadísticas de Usuarios
-            </Text>
-          </View>
-          
-          <View style={dashboardStyles.statsGrid}>
-            <View style={[dashboardStyles.statCard, dashboardStyles.totalCard]}>
-              <Text style={dashboardStyles.statNumber}>
-                {stats.totalUsers}
-              </Text>
-              <Text style={dashboardStyles.statLabel}>Total de Usuarios</Text>
-            </View>
-          </View>
-        </View>
 
         {/* Lista de Usuarios */}
         <View style={dashboardStyles.usersSection}>
@@ -188,57 +244,103 @@ const AdminDashboard = ({ adminData, onLogout }: AdminDashboardProps) => {
             </Text>
           </View>
         ) : (
-          users.map((user) => (
-            <View
-              key={user.id_user || user.id}
-              style={{
-                backgroundColor: 'white',
-                borderRadius: 12,
-                padding: 16,
-                marginBottom: 12,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.1,
-                shadowRadius: 2,
-                elevation: 2,
-              }}
-            >
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <View style={{ flex: 1 }}>
-                  <Text style={{
-                    fontSize: 16,
-                    fontWeight: 'bold',
-                    color: '#1f2937',
-                    marginBottom: 4,
-                  }}>
-                    {user.name}
-                  </Text>
-                  <Text style={{
-                    fontSize: 14,
-                    color: '#6b7280',
-                    marginBottom: 2,
-                  }}>
-                    📱 {user.phoneNumber}
-                  </Text>
-                  <Text style={{
-                    fontSize: 12,
-                    color: '#6b7280',
-                    marginBottom: 2,
-                  }}>
-                    Registrado: {formatDate(user.registeredAt)}
-                  </Text>
-                  {user.lastLogin && (
+          users.map((user) => {
+            const userId = user.id_user || user.id;
+            const isLoadingAmount = userId ? loadingAmounts.has(Number(userId)) : false;
+            
+            return (
+              <View
+                key={userId}
+                style={{
+                  backgroundColor: 'white',
+                  borderRadius: 12,
+                  padding: 16,
+                  marginBottom: 12,
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 2,
+                  elevation: 2,
+                }}
+              >
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{
+                      fontSize: 16,
+                      fontWeight: 'bold',
+                      color: '#1f2937',
+                      marginBottom: 4,
+                    }}>
+                      {user.name}
+                    </Text>
+                    <Text style={{
+                      fontSize: 14,
+                      color: '#6b7280',
+                      marginBottom: 2,
+                    }}>
+                      📱 {user.phoneNumber}
+                    </Text>
                     <Text style={{
                       fontSize: 12,
                       color: '#6b7280',
+                      marginBottom: 2,
                     }}>
-                      Último acceso: {formatDate(user.lastLogin)}
+                      Registrado: {formatDate(user.registeredAt)}
                     </Text>
-                  )}
+                    {user.lastLogin && (
+                      <Text style={{
+                        fontSize: 12,
+                        color: '#6b7280',
+                        marginBottom: 8,
+                      }}>
+                        Último acceso: {formatDate(user.lastLogin)}
+                      </Text>
+                    )}
+                    
+                    {/* Total de aportes */}
+                    <View style={{
+                      marginTop: 8,
+                      paddingTop: 8,
+                      borderTopWidth: 1,
+                      borderTopColor: '#e5e7eb',
+                    }}>
+                      {isLoadingAmount ? (
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          <ActivityIndicator size="small" color="#16a34a" />
+                          <Text style={{
+                            fontSize: 13,
+                            color: '#6b7280',
+                            marginLeft: 8,
+                          }}>
+                            Cargando aportes...
+                          </Text>
+                        </View>
+                      ) : (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <Text style={{
+                            fontSize: 13,
+                            color: '#4b5563',
+                            fontWeight: '600',
+                          }}>
+                            💰 Total de aportes:
+                          </Text>
+                          <Text style={{
+                            fontSize: 16,
+                            color: '#16a34a',
+                            fontWeight: 'bold',
+                          }}>
+                            {user.totalAmounts !== undefined 
+                              ? formatCurrency(user.totalAmounts)
+                              : 'No disponible'}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  </View>
                 </View>
               </View>
-            </View>
-          ))
+            );
+          })
         )}
       </View>
     </ScrollView>
@@ -247,104 +349,12 @@ const AdminDashboard = ({ adminData, onLogout }: AdminDashboardProps) => {
 
 // Estilos específicos para el dashboard de administrador
 const dashboardStyles = StyleSheet.create({
-  header: {
-    paddingVertical: 20,
-    alignItems: 'center',
-  },
-  adminInfo: {
-    alignItems: 'center',
-    marginBottom: 20,
-    width: '100%',
-  },
-  adminIconContainer: {
-    width: 60,
-    height: 60,
-    backgroundColor: '#1f2937',
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  adminIcon: {
-    fontSize: 24,
-  },
-  adminTextContainer: {
-    alignItems: 'center',
-    width: '100%',
-  },
-  title: {
-    fontSize: 22,
-    marginBottom: 6,
-    textAlign: 'center',
-    fontWeight: 'bold',
-  },
-  adminName: {
-    fontSize: 16,
+  usersCountText: {
+    fontSize: 13,
     color: '#6b7280',
     fontWeight: '500',
+    marginTop: 8,
     textAlign: 'center',
-  },
-  logoutContainer: {
-    width: '100%',
-    alignItems: 'center',
-  },
-  logoutButton: {
-    backgroundColor: '#dc2626',
-    paddingHorizontal: 24,
-    paddingVertical: 10,
-    borderRadius: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  statsContainer: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  statsHeader: {
-    marginBottom: 16,
-  },
-  statsTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1f2937',
-    textAlign: 'center',
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 12,
-  },
-  statCard: {
-    alignItems: 'center',
-    paddingVertical: 20,
-    paddingHorizontal: 40,
-    borderRadius: 12,
-    borderWidth: 2,
-  },
-  totalCard: {
-    backgroundColor: '#f8fafc',
-    borderColor: '#3b82f6',
-  },
-  statNumber: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#6b7280',
-    textTransform: 'uppercase',
   },
   usersSection: {
     marginBottom: 16,
