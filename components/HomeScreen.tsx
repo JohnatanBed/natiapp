@@ -367,7 +367,7 @@ const HomeScreen = ({ phoneNumber, name, onLogout }: HomeScreenProps) => {
                     <Text style={homeStyles.menuEmoji}>🎉</Text>
                   </View>
                   <Text style={homeStyles.menuItemText}>
-                    Rifa
+                    Evento
                   </Text>
                   <Text style={homeStyles.menuItemSubtext}>
                     Participa y gana

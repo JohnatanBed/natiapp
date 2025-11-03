@@ -95,11 +95,6 @@ const EventsScreen = ({ phoneNumber, onBack }: EventsScreenProps) => {
   };
 
   const confirmPurchase = async () => {
-    if (!userName.trim()) {
-      setMessage('Por favor ingresa tu nombre');
-      setMessageType('error');
-      return;
-    }
 
     setIsProcessing(true);
     setMessage('Procesando compra...');
@@ -184,7 +179,7 @@ const EventsScreen = ({ phoneNumber, onBack }: EventsScreenProps) => {
           <TouchableOpacity onPress={onBack} style={styles.backButton}>
             <Text style={styles.backButtonText}>← Volver</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>🎉 Rifa</Text>
+          <Text style={styles.headerTitle}>Rifa</Text>
           <Text style={styles.headerSubtitle}>Premio: {PRIZE}</Text>
         </View>
       </View>
@@ -317,13 +312,6 @@ const EventsScreen = ({ phoneNumber, onBack }: EventsScreenProps) => {
               </Text>
             </View>
 
-            <TextInput
-              style={styles.nameInput}
-              placeholder="Tu nombre completo"
-              value={userName}
-              onChangeText={setUserName}
-              editable={!isProcessing}
-            />
 
             <View style={homeStyles.confirmButtons}>
               <TouchableOpacity 

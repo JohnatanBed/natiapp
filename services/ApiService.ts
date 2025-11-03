@@ -10,7 +10,7 @@ interface ImageAsset {
 
 class ApiService {
 
-  private baseURL: string ='http://192.168.20.76:5000/api';
+  private baseURL: string ='http://192.168.1.10:5000/api';
 
   private token: string | null = null;
 

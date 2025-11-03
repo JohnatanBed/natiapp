@@ -124,7 +124,7 @@ const AdminLoginScreen = ({ onAdminLoginSuccess, onBackToUserLogin, onNavigateTo
     >
       <View style={loginStyles.innerContainer}>
         <View style={loginStyles.logoContainer}>
-          <Text style={loginStyles.title}>Panel de Administrador</Text>
+          <Text style={loginStyles.title}>Ingreso de administrador</Text>
           <Text style={loginStyles.subtitle}>Ingresa tus credenciales para continuar</Text>
         </View>
 

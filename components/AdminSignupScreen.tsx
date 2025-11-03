@@ -239,16 +239,16 @@ const AdminSignupScreen = ({ onAdminSignupSuccess, onBackToAdminLogin }: AdminSi
             <View style={loginStyles.inputContainer}>
               <Text style={loginStyles.inputLabel}>Código de Grupo</Text>
               <TextInput
-                style={[loginStyles.input, signupStyles.input]}
-                value={codeGroup}
-                onChangeText={setCodeGroup}
-                placeholder="Código único para tu grupo"
-                autoCapitalize="none"
-                autoCorrect={false}
-                editable={!isLoading}
+              style={[loginStyles.input, signupStyles.input]}
+              value={codeGroup}
+              onChangeText={(text) => setCodeGroup(text.toUpperCase())}
+              placeholder="Código único para tu grupo"
+              autoCapitalize="characters"
+              autoCorrect={false}
+              editable={!isLoading}
               />
               <Text style={signupStyles.helperText}>
-                Este código será usado para identificar tu grupo
+              Este código será usado para identificar tu grupo
               </Text>
             </View>
 
