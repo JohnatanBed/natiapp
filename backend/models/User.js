@@ -34,18 +34,19 @@ class User {
 
     // Insert user into database
     const result = await query(
-      'INSERT INTO users (name, phoneNumber, password, role, code_group) VALUES (?, ?, ?, ?, ?)',
+      'INSERT INTO users (name, phoneNumber, password, role, code_group) VALUES (?, ?, ?, ?, ?) RETURNING *',
       [userData.name, userData.phoneNumber, userData.password, userData.role || 'user', userData.code_group || null]
     );
 
     // Return the newly created user with its id_user
+    const newUser = result[0];
     return {
-      id_user: result.insertId,
-      name: userData.name,
-      phoneNumber: userData.phoneNumber,
-      role: userData.role || 'user',
-      code_group: userData.code_group || null,
-      registeredAt: new Date()
+      id_user: newUser.id_user,
+      name: newUser.name,
+      phoneNumber: newUser.phonenumber,
+      role: newUser.role,
+      code_group: newUser.code_group,
+      registeredAt: newUser.registeredat
     };
   }
 
@@ -134,9 +135,9 @@ class User {
     }
 
     const sql = `UPDATE users SET ${updates.join(', ')} WHERE ${conditions.join(' AND ')}`;
-    const result = await query(sql, params);
+    const { rowCount } = await query(sql, params);
 
-    return { modifiedCount: result.affectedRows };
+    return { modifiedCount: rowCount || 0 };
   }
 
   // Delete user
@@ -151,9 +152,9 @@ class User {
     }
 
     const sql = `DELETE FROM users WHERE ${conditions.join(' AND ')}`;
-    const result = await query(sql, params);
+    const { rowCount } = await query(sql, params);
 
-    return { deletedCount: result.affectedRows };
+    return { deletedCount: rowCount || 0 };
   }
 
   // Match password

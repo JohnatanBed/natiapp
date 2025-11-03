@@ -33,15 +33,16 @@ class Loan {
       loanData.status || 'pending'
     ];
 
-    const result = await query(sql, params);
+    const result = await query(sql + ' RETURNING *', params);
+    const newLoan = result[0];
 
     // Return the newly created loan record with its ID
     return {
-      id_loan: result.insertId,
-      user_id: loanData.user_id,
-      amount: parseFloat(loanData.amount),
-      status: loanData.status || 'pending',
-      request_date: new Date()
+      id_loan: newLoan.id_loan,
+      user_id: newLoan.user_id,
+      amount: parseFloat(newLoan.amount),
+      status: newLoan.status,
+      request_date: newLoan.request_date || newLoan.requestedat
     };
   }
 
@@ -95,10 +96,10 @@ class Loan {
     }
 
     const sql = 'UPDATE loans SET status = ? WHERE id_loan = ?';
-    const result = await query(sql, [status, id_loan]);
+    const { rowCount } = await query(sql, [status, id_loan]);
 
     return {
-      modifiedCount: result.affectedRows,
+      modifiedCount: rowCount || 0,
       status: status
     };
   }
@@ -114,7 +115,7 @@ class Loan {
     }
 
     const result = await query(sql, params);
-    return result[0].total || 0;
+    return parseFloat(result[0].total) || 0;
   }
 
   // Get loans count by status
@@ -128,7 +129,7 @@ class Loan {
     }
 
     const result = await query(sql, params);
-    return result[0].count || 0;
+    return parseInt(result[0].count) || 0;
   }
 
   // Delete a loan (only if pending)
@@ -144,10 +145,10 @@ class Loan {
     }
 
     const sql = 'DELETE FROM loans WHERE id_loan = ?';
-    const result = await query(sql, [id_loan]);
+    const { rowCount } = await query(sql, [id_loan]);
 
     return {
-      deletedCount: result.affectedRows
+      deletedCount: rowCount || 0
     };
   }
 }

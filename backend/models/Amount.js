@@ -37,17 +37,18 @@ class Amount {
       sql += ', ?';
     }
     
-    sql += ')';
+    sql += ') RETURNING *';
 
     const result = await query(sql, params);
+    const newAmount = result[0];
 
     // Return the newly created amount record with its ID
     return {
-      id_amount: result.insertId,
-      user_id: amountData.user_id,
-      money: amountData.money,
-      screenshot: amountData.screenshot ? 'Uploaded' : null,
-      registeredAt: new Date()
+      id_amount: newAmount.id_amount,
+      user_id: newAmount.user_id,
+      money: newAmount.money,
+      screenshot: newAmount.screenshot || null,
+      registeredAt: newAmount.registeredat
     };
   }
 
@@ -78,15 +79,15 @@ class Amount {
     const results = await query(sql, [limit, offset]);
     
     // Get total count for pagination
-    const [countResult] = await query('SELECT COUNT(*) as total FROM amounts');
-    const totalCount = countResult.total;
+    const countResult = await query('SELECT COUNT(*) as total FROM amounts');
+    const totalCount = countResult[0].total;
     
     return {
       data: results,
       pagination: {
         currentPage: page,
         totalPages: Math.ceil(totalCount / limit),
-        totalCount: totalCount
+        totalCount: parseInt(totalCount)
       }
     };
   }
@@ -115,33 +116,33 @@ class Amount {
     params.push(id_amount);
 
     const sql = `UPDATE amounts SET ${updates.join(', ')} WHERE id_amount = ?`;
-    const result = await query(sql, params);
+    const { rowCount } = await query(sql, params);
 
-    return { modifiedCount: result.affectedRows };
+    return { modifiedCount: rowCount || 0 };
   }
 
   // Delete amount
   static async delete(id_amount) {
     const sql = 'DELETE FROM amounts WHERE id_amount = ?';
-    const result = await query(sql, [id_amount]);
+    const { rowCount } = await query(sql, [id_amount]);
 
-    return { deletedCount: result.affectedRows };
+    return { deletedCount: rowCount || 0 };
   }
 
   // Get sum of money by user_id
   static async getTotalByUserId(user_id) {
     const sql = 'SELECT SUM(money) as total FROM amounts WHERE user_id = ?';
-    const [result] = await query(sql, [user_id]);
+    const result = await query(sql, [user_id]);
     
-    return result.total || 0;
+    return parseFloat(result[0].total) || 0;
   }
 
   // Get sum of all money
   static async getTotal() {
     const sql = 'SELECT SUM(money) as total FROM amounts';
-    const [result] = await query(sql, []);
+    const result = await query(sql, []);
     
-    return result.total || 0;
+    return parseFloat(result[0].total) || 0;
   }
 }
 

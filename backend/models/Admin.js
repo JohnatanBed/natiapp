@@ -37,18 +37,19 @@ class Admin {
 
     // Insert admin into database
     const result = await query(
-      'INSERT INTO admins (name, email, password, code_group, role) VALUES (?, ?, ?, ?, ?)',
+      'INSERT INTO admins (name, email, password, code_group, role) VALUES (?, ?, ?, ?, ?) RETURNING *',
       [adminData.name, adminData.email, adminData.password, adminData.code_group, adminData.role || 'admin']
     );
 
+    const newAdmin = result[0];
     // Return the newly created admin with its ID
     return {
-      id_admin: result.insertId,
-      name: adminData.name,
-      email: adminData.email,
-      code_group: adminData.code_group,
-      role: adminData.role || 'admin',
-      registeredAt: new Date()
+      id_admin: newAdmin.id_admin,
+      name: newAdmin.name,
+      email: newAdmin.email,
+      code_group: newAdmin.code_group,
+      role: newAdmin.role,
+      registeredAt: newAdmin.registeredat
     };
   }
 
@@ -125,9 +126,9 @@ class Admin {
     }
 
     const sql = `UPDATE admins SET ${updates.join(', ')} WHERE ${conditions.join(' AND ')}`;
-    const result = await query(sql, params);
+    const { rowCount } = await query(sql, params);
 
-    return { modifiedCount: result.affectedRows };
+    return { modifiedCount: rowCount || 0 };
   }
 
   // Delete admin
@@ -142,9 +143,9 @@ class Admin {
     }
 
     const sql = `DELETE FROM admins WHERE ${conditions.join(' AND ')}`;
-    const result = await query(sql, params);
+    const { rowCount } = await query(sql, params);
 
-    return { deletedCount: result.affectedRows };
+    return { deletedCount: rowCount || 0 };
   }
 
   // Match password

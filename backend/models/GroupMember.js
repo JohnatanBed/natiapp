@@ -37,16 +37,17 @@ class GroupMember {
     }
 
     // Insert group member into database
-    const sql = 'INSERT INTO group_members (admin_id, user_id) VALUES (?, ?)';
+    const sql = 'INSERT INTO group_members (admin_id, user_id) VALUES (?, ?) RETURNING *';
     const params = [groupMemberData.admin_id, groupMemberData.user_id];
 
     const result = await query(sql, params);
+    const newMember = result[0];
 
     // Return the newly created group member
     return {
-      admin_id: groupMemberData.admin_id,
-      user_id: groupMemberData.user_id,
-      union_date: new Date()
+      admin_id: newMember.admin_id,
+      user_id: newMember.user_id,
+      union_date: newMember.union_date || newMember.joinedat
     };
   }
 
@@ -132,15 +133,15 @@ class GroupMember {
     const results = await query(sql, [limit, offset]);
     
     // Get total count for pagination
-    const [countResult] = await query('SELECT COUNT(*) as total FROM group_members');
-    const totalCount = countResult.total;
+    const countResult = await query('SELECT COUNT(*) as total FROM group_members');
+    const totalCount = countResult[0].total;
     
     return {
       data: results,
       pagination: {
         currentPage: page,
         totalPages: Math.ceil(totalCount / limit),
-        totalCount: totalCount
+        totalCount: parseInt(totalCount)
       }
     };
   }
@@ -148,41 +149,41 @@ class GroupMember {
   // Remove a user from a group
   static async delete(admin_id, user_id) {
     const sql = 'DELETE FROM group_members WHERE admin_id = ? AND user_id = ?';
-    const result = await query(sql, [admin_id, user_id]);
+    const { rowCount } = await query(sql, [admin_id, user_id]);
 
-    return { deletedCount: result.affectedRows };
+    return { deletedCount: rowCount || 0 };
   }
 
   // Remove all users from a specific admin's group
   static async deleteAllByAdminId(admin_id) {
     const sql = 'DELETE FROM group_members WHERE admin_id = ?';
-    const result = await query(sql, [admin_id]);
+    const { rowCount } = await query(sql, [admin_id]);
 
-    return { deletedCount: result.affectedRows };
+    return { deletedCount: rowCount || 0 };
   }
 
   // Remove a user from all groups
   static async deleteAllByUserId(user_id) {
     const sql = 'DELETE FROM group_members WHERE user_id = ?';
-    const result = await query(sql, [user_id]);
+    const { rowCount } = await query(sql, [user_id]);
 
-    return { deletedCount: result.affectedRows };
+    return { deletedCount: rowCount || 0 };
   }
 
   // Count members in a specific admin's group
   static async countMembersByAdminId(admin_id) {
     const sql = 'SELECT COUNT(*) as count FROM group_members WHERE admin_id = ?';
-    const [result] = await query(sql, [admin_id]);
+    const result = await query(sql, [admin_id]);
     
-    return result.count || 0;
+    return parseInt(result[0].count) || 0;
   }
 
   // Count groups that a specific user belongs to
   static async countGroupsByUserId(user_id) {
     const sql = 'SELECT COUNT(*) as count FROM group_members WHERE user_id = ?';
-    const [result] = await query(sql, [user_id]);
+    const result = await query(sql, [user_id]);
     
-    return result.count || 0;
+    return parseInt(result[0].count) || 0;
   }
 }
 
