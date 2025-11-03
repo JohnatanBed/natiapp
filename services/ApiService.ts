@@ -10,7 +10,7 @@ interface ImageAsset {
 
 class ApiService {
 
-  private baseURL: string ='http://192.168.1.10:5000/api';
+private baseURL: string = 'https://natiapp.onrender.com/api';
 
   private token: string | null = null;
 
