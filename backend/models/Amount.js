@@ -6,7 +6,6 @@ class Amount {
     this.id_amount = amountData.id_amount;
     this.user_id = amountData.user_id;
     this.money = amountData.money;
-    this.screenshot = amountData.screenshot;
     this.registeredAt = amountData.registeredAt || new Date();
   }
 
@@ -21,23 +20,8 @@ class Amount {
     }
 
     // Insert amount into database
-    let sql = 'INSERT INTO amounts (user_id, money';
+    const sql = 'INSERT INTO amounts (user_id, money) VALUES (?, ?) RETURNING *';
     const params = [amountData.user_id, amountData.money];
-
-    // Add screenshot if provided
-    if (amountData.screenshot) {
-      sql += ', screenshot';
-      params.push(amountData.screenshot);
-    }
-
-    sql += ') VALUES (?, ?';
-    
-    // Add placeholder for screenshot if provided
-    if (amountData.screenshot) {
-      sql += ', ?';
-    }
-    
-    sql += ') RETURNING *';
 
     const result = await query(sql, params);
     const newAmount = result[0];
@@ -47,7 +31,6 @@ class Amount {
       id_amount: newAmount.id_amount,
       user_id: newAmount.user_id,
       money: newAmount.money,
-      screenshot: newAmount.screenshot || null,
       registeredAt: newAmount.registeredat
     };
   }
@@ -101,11 +84,6 @@ class Amount {
     if (updateData.money !== undefined) {
       updates.push('money = ?');
       params.push(updateData.money);
-    }
-
-    if (updateData.screenshot !== undefined) {
-      updates.push('screenshot = ?');
-      params.push(updateData.screenshot);
     }
 
     if (updates.length === 0) {

@@ -8,12 +8,6 @@ exports.createAmount = async (req, res, next) => {
   try {
     const { money } = req.body;
     const user_id = req.isAdmin ? req.user.id_admin : req.user.id_user;
-    let screenshot = null;
-
-    // Handle screenshot if provided
-    if (req.files && req.files.screenshot) {
-      screenshot = req.files.screenshot.data;
-    }
 
     // Validate amount
     if (!money || isNaN(parseFloat(money)) || parseFloat(money) <= 0) {
@@ -27,8 +21,7 @@ exports.createAmount = async (req, res, next) => {
     // Create amount
     const amount = await Amount.create({
       user_id,
-      money: parseFloat(money),
-      screenshot
+      money: parseFloat(money)
     });
 
     res.status(201).json({
@@ -173,7 +166,6 @@ exports.updateAmount = async (req, res, next) => {
   try {
     const { id_amount } = req.params;
     const { money } = req.body;
-    let screenshot;
 
     // Check if amount exists
     const amount = await Amount.findById(id_amount);
@@ -194,11 +186,6 @@ exports.updateAmount = async (req, res, next) => {
       });
     }
 
-    // Handle screenshot if provided
-    if (req.files && req.files.screenshot) {
-      screenshot = req.files.screenshot.data;
-    }
-
     const updateData = {};
     if (money !== undefined) {
       if (isNaN(parseFloat(money)) || parseFloat(money) <= 0) {
@@ -209,10 +196,6 @@ exports.updateAmount = async (req, res, next) => {
         });
       }
       updateData.money = parseFloat(money);
-    }
-    
-    if (screenshot !== undefined) {
-      updateData.screenshot = screenshot;
     }
 
     const result = await Amount.update(id_amount, updateData);
