@@ -11,7 +11,8 @@ interface HistoryScreenProps {
 interface AmountHistory {
     id_amount: number;
     money: number;
-    registeredAt: string;
+    registeredAt?: string;
+    registeredat?: string; // PostgreSQL devuelve en minúsculas
     screenshot?: string;
 }
 
@@ -24,7 +25,12 @@ const HistoryScreen = ({ phoneNumber, onBack }: HistoryScreenProps) => {
             try {
                 // Asume que el endpoint devuelve { success, data: [...] }
                 const res = await apiService.get<{ success: boolean; data: AmountHistory[] }>(`/amounts/me`);
-                setHistory(res.data || []);
+                // Normalizar los datos: mapear registeredat a registeredAt
+                const normalizedData = (res.data || []).map(item => ({
+                    ...item,
+                    registeredAt: item.registeredAt || item.registeredat
+                }));
+                setHistory(normalizedData);
             } catch (error) {
                 setHistory([]);
             } finally {
@@ -50,19 +56,25 @@ const HistoryScreen = ({ phoneNumber, onBack }: HistoryScreenProps) => {
             ) : history.length === 0 ? (
                 <Text style={historyStyles.noHistoryText}>No tienes aportes registrados.</Text>
             ) : (
-                history.map(item => (
-                    <View key={item.id_amount} style={historyStyles.historyItem}>
-                        <Text style={historyStyles.amountText}>
-                            Aporte: ${Number(item.money).toLocaleString('es-CO')}
-                        </Text>
-                        <Text style={historyStyles.dateText}>
-                            Fecha: {new Date(item.registeredAt).toLocaleString('es-CO')}
-                        </Text>
-                        {item.screenshot && (
-                            <Text style={historyStyles.screenshotText}>📎 Comprobante adjunto</Text>
-                        )}
-                    </View>
-                ))
+                history.map(item => {
+                    const dateStr = item.registeredAt || item.registeredat || '';
+                    const formattedDate = dateStr ? new Date(dateStr).toLocaleString('es-CO') : 'Fecha no disponible';
+                    
+                    return (
+                        <View key={item.id_amount} style={historyStyles.historyItem}>
+                            <Text style={historyStyles.amountText}>
+                                Aporte: ${Number(item.money).toLocaleString('es-CO')}
+                            </Text>
+                            <Text style={historyStyles.dateText}>
+                                Fecha: {formattedDate}
+                            </Text>
+                            {item.screenshot && (
+                                <Text style={historyStyles.screenshotText}>📎 Comprobante adjunto</Text>
+                            )}
+                        </View>
+                    );
+                })
+            
             )}
 
             <TouchableOpacity onPress={onBack} style={historyStyles.backButton}>

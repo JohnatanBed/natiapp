@@ -109,14 +109,6 @@ const AdminLoginScreen = ({ onAdminLoginSuccess, onBackToUserLogin, onNavigateTo
     }
   };
 
-  const showDemoCredentials = () => {
-    Alert.alert(
-      'Credenciales Demo',
-      'Email: admin@natiapp.com\nPassword: admin123',
-      [{ text: 'OK' }]
-    );
-  };
-
   return (
     <KeyboardAvoidingView 
       style={loginStyles.container}

@@ -31,10 +31,25 @@ const AdminDashboard = ({ adminData, onLogout }: AdminDashboardProps) => {
     try {
       const result = await userManagementService.getAllUsers();
       if (result.success && result.users) {
-        setUsers(result.users);
+        // Normalize backend field names to expected camelCase
+        const normalized = result.users.map((u: any) => ({
+          // preserve both id_user and id to keep downstream checks working
+          id_user: u.id_user ?? (typeof u.id === 'number' ? u.id : Number(u.id)) ?? undefined,
+          id: u.id ?? (u.id_user != null ? String(u.id_user) : undefined),
+          name: u.name,
+          phoneNumber: u.phoneNumber ?? u.phonenumber ?? u.phone_number ?? '',
+          isActive: u.isActive ?? u.active ?? true,
+          role: u.role,
+          code_group: u.code_group,
+          registeredAt: u.registeredAt ?? u.registeredat ?? u.createdAt ?? u.createdat,
+          lastLogin: u.lastLogin ?? u.lastlogin ?? undefined,
+          totalAmounts: (u as any).totalAmounts
+        })) as UserWithAmounts[];
+
+        setUsers(normalized);
         setMessage('');
         // Load amounts for all users
-        loadUserAmounts(result.users);
+        loadUserAmounts(normalized as any);
       } else {
         setMessage(result.error || 'Error al cargar usuarios');
       }
@@ -110,8 +125,11 @@ const AdminDashboard = ({ adminData, onLogout }: AdminDashboardProps) => {
     setShowLogoutConfirm(false);
   };
 
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString('es-ES', {
+  const formatDate = (date: Date | string | undefined) => {
+    if (!date) return 'No disponible';
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return 'No disponible';
+    return d.toLocaleDateString('es-ES', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -175,7 +193,7 @@ const AdminDashboard = ({ adminData, onLogout }: AdminDashboardProps) => {
         </View>
 
         <View style={homeStyles.totalCard}>
-          <Text style={homeStyles.totalLabel}>Total de Aportes</Text>
+          <Text style={homeStyles.totalLabel}>Total de Aportes del grupo</Text>
           <Text style={homeStyles.totalAmountText}>
             {loadingAmounts.size > 0 ? (
               <ActivityIndicator size="small" color="#16a34a" />

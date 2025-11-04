@@ -277,8 +277,8 @@ const HomeScreen = ({ phoneNumber, name, onLogout }: HomeScreenProps) => {
                       style={homeStyles.codeInput}
                       placeholder="Código de grupo"
                       value={codeGroup}
-                      onChangeText={setCodeGroup}
-                      autoCapitalize="none"
+                      onChangeText={(text) => setCodeGroup(text.toUpperCase())}
+                      autoCapitalize="characters"
                       autoCorrect={false}
                       editable={!isJoining}
                     />

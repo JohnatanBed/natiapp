@@ -44,7 +44,15 @@ class Amount {
       return null;
     }
 
-    return results[0];
+    const row = results[0];
+    // Normalize column names (PostgreSQL returns lowercase)
+    return {
+      id_amount: row.id_amount,
+      user_id: row.user_id,
+      money: row.money,
+      registeredAt: row.registeredat, // Map lowercase to camelCase
+      screenshot: row.screenshot
+    };
   }
 
   // Find amounts by user_id
@@ -52,7 +60,14 @@ class Amount {
     const sql = 'SELECT * FROM amounts WHERE user_id = ? ORDER BY registeredAt DESC';
     const results = await query(sql, [user_id]);
     
-    return results;
+    // Normalize column names (PostgreSQL returns lowercase)
+    return results.map(row => ({
+      id_amount: row.id_amount,
+      user_id: row.user_id,
+      money: row.money,
+      registeredAt: row.registeredat, // Map lowercase to camelCase
+      screenshot: row.screenshot
+    }));
   }
 
   // Get all amounts (with optional pagination)
@@ -65,8 +80,18 @@ class Amount {
     const countResult = await query('SELECT COUNT(*) as total FROM amounts');
     const totalCount = countResult[0].total;
     
+    // Normalize column names (PostgreSQL returns lowercase)
+    const normalizedData = results.map(row => ({
+      id_amount: row.id_amount,
+      user_id: row.user_id,
+      money: row.money,
+      registeredAt: row.registeredat, // Map lowercase to camelCase
+      screenshot: row.screenshot,
+      user_name: row.user_name
+    }));
+    
     return {
-      data: results,
+      data: normalizedData,
       pagination: {
         currentPage: page,
         totalPages: Math.ceil(totalCount / limit),
