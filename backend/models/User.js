@@ -84,11 +84,7 @@ class User {
 
     sql += ' ORDER BY registeredAt DESC';
     
-    console.log('User.findAll SQL:', sql);
-    console.log('User.findAll params:', params);
-    
     const results = await query(sql, params);
-    console.log('User.findAll results count:', results.length);
     
     return results;
   }

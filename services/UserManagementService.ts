@@ -157,7 +157,6 @@ class UserManagementService {
 
       // Normalize phone number for consistency
       const normalizedPhone = this.normalizePhoneNumber(phoneNumber);
-      console.log('[UserManagementService] Registering user with normalized phone:', normalizedPhone, 'original:', phoneNumber);
       
       // Additional phone validation
       if (normalizedPhone.length !== 10 || !normalizedPhone.startsWith('3')) {
@@ -241,7 +240,6 @@ class UserManagementService {
       }
 
       const normalizedPhone = this.normalizePhoneNumber(phoneNumber);
-      console.log('[UserManagementService] Checking user:', normalizedPhone);
       
       if (normalizedPhone.length !== 10 || !normalizedPhone.startsWith('3')) {
         return {
@@ -287,12 +285,9 @@ class UserManagementService {
         });
       } else {
         // Use the real backend API
-        console.log('[UserManagementService] Making API call to check user existence');
         const response = await apiService.post<CheckUserResponse>('/auth/check-user', {
           phoneNumber: normalizedPhone
         });
-        
-        console.log('[UserManagementService] API Response for user check:', response);
         
         // Ensure the response has the expected structure
         if (!response || typeof response.success !== 'boolean') {
@@ -368,7 +363,6 @@ class UserManagementService {
 
       // Normalize phone number for consistency
       const normalizedPhone = this.normalizePhoneNumber(phoneNumber);
-      console.log('[UserManagementService] Login attempt with normalized phone:', normalizedPhone, 'original:', phoneNumber);
       
       // Additional phone validation
       if (normalizedPhone.length !== 10 || !normalizedPhone.startsWith('3')) {

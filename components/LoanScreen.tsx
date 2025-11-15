@@ -66,7 +66,6 @@ const LoanScreen = ({ phoneNumber, onBack }: LoanScreenProps) => {
         }
         const maxLoanByPercentage = Math.floor(currentTotal * maxPercentage);
         const maxLoan = Math.min(maxLoanByPercentage, hardCap);
-        console.log(maxLoan)
         const ratio = requested / currentTotal;
 
         if (requested < minLoan)

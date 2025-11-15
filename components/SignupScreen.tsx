@@ -179,7 +179,6 @@ const SignupScreen = ({ onSignupSuccess, onBackToLogin }: SignupScreenProps) => 
   // Función para autocompletar el código de verificación
   const autoCompleteVerificationCode = (code: string) => {
     if (code && code.length === 4) {
-      console.log('[Signup] Auto-completing verification code:', code);
       
       // Llenar el código automáticamente
       setCode(code);
@@ -197,8 +196,6 @@ const SignupScreen = ({ onSignupSuccess, onBackToLogin }: SignupScreenProps) => 
   };
 
   const handleNext = async () => {
-    console.log('[Signup] Starting registration process...');
-    console.log('[Signup] SMS Service Status:', smsAuthService.getServiceStatus());
     
     try {
       // Reset error states
@@ -256,23 +253,18 @@ const SignupScreen = ({ onSignupSuccess, onBackToLogin }: SignupScreenProps) => 
 
       // Use the original phone number for user existence check
       // The UserManagementService will handle normalization internally
-      console.log('[Signup] Checking if user exists with phone:', phoneNumber);
 
       // Check if user already exists - CRITICAL VALIDATION
       const userCheckResult = await userManagementService.checkUserExists(phoneNumber);
-      
-      console.log('[Signup] User check result:', userCheckResult);
 
       // Enhanced validation logic with better error handling
       if (userCheckResult.success) {
         if (userCheckResult.exists) {
-          console.log('[Signup] User already exists, blocking registration');
           setMessage('Este número de celular ya está registrado.');
           setMessageType('error');
           setIsLoading(false);
           return;
         }
-        console.log('[Signup] User does not exist, proceeding with SMS verification');
       } else {
         // Handle specific error cases from user existence check
         console.error('[Signup] Error checking user existence:', userCheckResult.error);
@@ -299,8 +291,6 @@ const SignupScreen = ({ onSignupSuccess, onBackToLogin }: SignupScreenProps) => 
 
       // Send SMS verification code only if user doesn't exist
       const response = await smsAuthService.sendVerificationCode(formattedPhone);
-      
-      console.log('[Signup] SMS Response:', response);
 
       if (response.success) {
         setSessionId(response.sessionId || '');
@@ -532,7 +522,6 @@ const SignupScreen = ({ onSignupSuccess, onBackToLogin }: SignupScreenProps) => 
       setMessageType('info');
 
       // Final check before creating account - IMPORTANT SECURITY MEASURE
-      console.log('[Signup] Final user existence check before account creation:', phoneNumber);
       
       const finalUserCheck = await userManagementService.checkUserExists(phoneNumber);
       
@@ -553,7 +542,6 @@ const SignupScreen = ({ onSignupSuccess, onBackToLogin }: SignupScreenProps) => 
       }
 
       if (finalUserCheck.exists) {
-        console.log('[Signup] SECURITY ALERT: User tried to create account but already exists');
         setMessage('Este número ya está registrado. Intenta iniciar sesión en su lugar.');
         setMessageType('error');
         setIsLoading(false);
@@ -567,7 +555,6 @@ const SignupScreen = ({ onSignupSuccess, onBackToLogin }: SignupScreenProps) => 
         if (registrationResult.token) {
           await apiService.setToken(registrationResult.token);
         }
-        console.log('[Signup] Account created successfully for:', phoneNumber);
         setMessage(`¡Bienvenido ${name.trim()}! Tu cuenta ha sido creada exitosamente.`);
         setMessageType('success');
 

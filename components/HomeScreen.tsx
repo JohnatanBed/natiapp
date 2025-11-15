@@ -38,7 +38,6 @@ const HomeScreen = ({ phoneNumber, name, onLogout }: HomeScreenProps) => {
   const fetchTotalAmount = async () => {
     try {
       const response = await apiService.getMyAmounts();
-      console.log('Fetched amounts:', response);
 
       if (!response || !response.total) {
         console.error('Total not found:', response);

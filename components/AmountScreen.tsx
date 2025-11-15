@@ -227,7 +227,6 @@ const AmountScreen = ({ phoneNumber, onBack, onUpdateTotal }: AmountScreenProps)
           onPress: async () => {
             try {
               const response = await apiService.createAmount(cantidad, imagen || undefined);
-              console.log('aporte creado correctamente:', response);
               if (typeof onUpdateTotal === 'function') {
                 await onUpdateTotal();
               }

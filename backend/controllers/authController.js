@@ -26,7 +26,6 @@ exports.register = async (req, res, next) => {
     const userExists = await User.findOne({ phoneNumber });
     
     if (userExists) {
-      console.log('[Backend] Registration blocked - user already exists:', phoneNumber);
       return res.status(400).json({
         success: false,
         message: 'El número de teléfono ya está registrado',
@@ -78,7 +77,6 @@ exports.login = async (req, res, next) => {
     const user = await User.findOne({ phoneNumber });
     
     if (!user) {
-      console.log('[Backend] Login failed - user not found:', phoneNumber);
       return res.status(401).json({
         success: false,
         message: 'Credenciales incorrectas',
@@ -89,15 +87,12 @@ exports.login = async (req, res, next) => {
     const isMatch = await User.matchPassword(user.id_user, password);
     
     if (!isMatch) {
-      console.log('[Backend] Login failed - incorrect password for:', phoneNumber);
       return res.status(401).json({
         success: false,
         message: 'Credenciales incorrectas',
         error: 'Invalid credentials'
       });
     }
-    
-    console.log('[Backend] Login successful for:', phoneNumber);
     
     const token = generateToken(user.id_user);
     
@@ -282,11 +277,8 @@ exports.checkUser = async (req, res, next) => {
     let { phoneNumber } = req.body;
     
     phoneNumber = normalizePhoneNumber(phoneNumber);
-    console.log('[Backend] Checking user existence for normalized phone:', phoneNumber);
     
     const user = await User.findOne({ phoneNumber });
-    
-    console.log('[Backend] User check result:', { exists: !!user, phoneNumber });
     
     res.status(200).json({
       success: true,

@@ -228,7 +228,6 @@ const LoginScreen = ({ onLoginSuccess, onNavigateToSignup, onNavigateToAdminLogi
         
         setTimeout(() => {
           const userName = loginResult.user?.name || phoneNumber;
-          console.log('Login successful, user name:', userName);
           onLoginSuccess(phoneNumber, userName);
         }, 1000);
       } else {

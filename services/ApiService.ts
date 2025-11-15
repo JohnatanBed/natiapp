@@ -113,8 +113,6 @@ private baseURL: string = 'https://natiapp.onrender.com/api';
       });
 
       const responseText = await response.text();
-      console.log(`Response status: ${response.status}`);
-      console.log(`Response text: ${responseText}`);
       
       if (!response.ok) {
         let errorMessage;
@@ -153,8 +151,6 @@ private baseURL: string = 'https://natiapp.onrender.com/api';
       });
 
       const responseText = await response.text();
-      console.log(`Response status: ${response.status}`);
-      console.log(`Response text: ${responseText}`);
       
       if (!response.ok) {
         let errorMessage;
@@ -192,8 +188,6 @@ private baseURL: string = 'https://natiapp.onrender.com/api';
       });
 
       const responseText = await response.text();
-      console.log(`Response status: ${response.status}`);
-      console.log(`Response text: ${responseText}`);
       
       if (!response.ok) {
         let errorMessage;
@@ -237,8 +231,6 @@ private baseURL: string = 'https://natiapp.onrender.com/api';
       });
 
       const responseText = await response.text();
-      console.log(`Response status: ${response.status}`);
-      console.log(`Response text: ${responseText}`);
       
       if (!response.ok) {
         let errorMessage;

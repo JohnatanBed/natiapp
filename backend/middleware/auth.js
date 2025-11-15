@@ -11,11 +11,8 @@ exports.protect = async (req, res, next) => {
   ) {
     token = req.headers.authorization.split(' ')[1];
   }
-
-  console.log("Token recibido en el middleware auth:", token);
   
   if (!token) {
-    console.log("No token provided");
     return res.status(401).json({
       success: false,
       error: 'Not authorized to access this route'
@@ -24,19 +21,15 @@ exports.protect = async (req, res, next) => {
   
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log("Token decodificado:", decoded);
     
     const tokenId = decoded.id;
     
     if (!tokenId || tokenId === undefined) {
-      console.log("No ID found in token:", decoded);
       return res.status(401).json({
         success: false,
         error: 'Invalid token: no user ID found'
       });
     }
-    
-    console.log("Token ID extraído:", tokenId);
     
     const Admin = require('../models/Admin');
     const admin = await Admin.findById(tokenId);
@@ -44,7 +37,6 @@ exports.protect = async (req, res, next) => {
     if (admin) {
       req.user = admin;
       req.isAdmin = true;
-      console.log('Administrador encontrado:', admin);
       return next();
     }
     
@@ -59,7 +51,6 @@ exports.protect = async (req, res, next) => {
 
     req.user = await User.findById_user(tokenId);
     req.isAdmin = false;
-    console.log('Usuario encontrado:', req.user);
 
     if (!req.user) {
       return res.status(401).json({

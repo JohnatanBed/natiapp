@@ -41,13 +41,8 @@ exports.getAllUsers = async (req, res, next) => {
     const adminCodeGroup = req.user.code_group;
     const adminId = req.user.id_admin;
     
-    console.log('[getAllUsers] Admin code_group:', adminCodeGroup);
-    console.log('[getAllUsers] Admin id:', adminId);
-    
     const GroupMember = require('../models/GroupMember');
     const groupMembers = await GroupMember.findByAdminId(adminId);
-    
-    console.log('[getAllUsers] Group members found:', groupMembers.length);
     
     const userIds = groupMembers.map(gm => gm.user_id);
     
@@ -70,10 +65,6 @@ exports.getAllUsers = async (req, res, next) => {
         allUsers.push(user);
       }
     }
-    
-    console.log('[getAllUsers] Total users found:', allUsers.length);
-    console.log('[getAllUsers] Users data:', allUsers);
-    console.log('[getAllUsers] Sending response...');
     
     return res.status(200).json({
       success: true,
