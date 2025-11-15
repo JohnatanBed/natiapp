@@ -1,6 +1,6 @@
 // PostgreSQL Database configuration
 const { Pool } = require('pg');
-require('dotenv').config();
+require('dotenv').config({ debug: false });
 
 let pool;
 
