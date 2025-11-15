@@ -34,7 +34,6 @@ const AmountScreen = ({ phoneNumber, onBack, onUpdateTotal }: AmountScreenProps)
   const [uploadingImage, setUploadingImage] = useState(false);
   const [descripcion, setDescripcion] = useState('');
 
-  // Fecha y hora actual - solo lectura
   const fechaActual = new Date().toLocaleDateString('es-ES', {
     day: '2-digit',
     month: '2-digit',
@@ -46,7 +45,6 @@ const AmountScreen = ({ phoneNumber, onBack, onUpdateTotal }: AmountScreenProps)
     minute: '2-digit',
   });
 
-  // Solicitar permisos para Android
   const requestCameraPermission = async () => {
     if (Platform.OS === 'android') {
       try {
@@ -74,7 +72,6 @@ const AmountScreen = ({ phoneNumber, onBack, onUpdateTotal }: AmountScreenProps)
     return true;
   };
 
-  // Solicitar permisos de almacenamiento para Android
   const requestStoragePermission = async () => {
     if (Platform.OS === 'android') {
       try {
@@ -103,7 +100,6 @@ const AmountScreen = ({ phoneNumber, onBack, onUpdateTotal }: AmountScreenProps)
     return true;
   };
 
-  // Función para seleccionar imagen de la galería
   const seleccionarImagen = async () => {
     const hasPermission = await requestStoragePermission();
     if (!hasPermission) return;
@@ -145,7 +141,6 @@ const AmountScreen = ({ phoneNumber, onBack, onUpdateTotal }: AmountScreenProps)
     }
   };
 
-  // Función para tomar una foto con la cámara
   const tomarFoto = async () => {
     const hasPermission = await requestCameraPermission();
     if (!hasPermission) return;
@@ -187,12 +182,10 @@ const AmountScreen = ({ phoneNumber, onBack, onUpdateTotal }: AmountScreenProps)
     }
   };
 
-  // Función para eliminar la imagen seleccionada
   const eliminarImagen = () => {
     setImagen(null);
   };
 
-  // Cargar el token al iniciar
   useEffect(() => {
     const loadToken = async () => {
       await apiService.loadToken();
@@ -203,7 +196,6 @@ const AmountScreen = ({ phoneNumber, onBack, onUpdateTotal }: AmountScreenProps)
 
 
   const handleAmount = async () => {
-    // Validaciones
     if (!cantidad || cantidad.trim() === '') {
       Alert.alert('Error', 'Ingresa un valor para aportar...');
       return;
@@ -221,7 +213,6 @@ const AmountScreen = ({ phoneNumber, onBack, onUpdateTotal }: AmountScreenProps)
 
     setLoading(true);
 
-    // Mostrar alerta para confirmar o corregir el valor ingresado
     Alert.alert(
       'Confirmar valor',
       `¿Deseas aportar $${Number(cantidad).toLocaleString('es-CO')}?`,
@@ -237,7 +228,6 @@ const AmountScreen = ({ phoneNumber, onBack, onUpdateTotal }: AmountScreenProps)
             try {
               const response = await apiService.createAmount(cantidad, imagen || undefined);
               console.log('aporte creado correctamente:', response);
-              // Actualizar el total aportado en HomeScreen
               if (typeof onUpdateTotal === 'function') {
                 await onUpdateTotal();
               }

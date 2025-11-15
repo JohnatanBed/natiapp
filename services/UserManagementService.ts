@@ -1,5 +1,3 @@
-// User Management Service
-// This service handles user registration, authentication, and management
 import { apiService } from './ApiService';
 
 export interface User {

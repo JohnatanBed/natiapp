@@ -78,11 +78,9 @@ const LoginScreen = ({ onLoginSuccess, onNavigateToSignup, onNavigateToAdminLogi
 
   const handleNext = async () => {
     try {
-      // Reset error states
       setMessage('');
       setMessageType('');
 
-      // Input validation
       if (!phoneNumber?.trim()) {
         setMessage('Ingresa tu número de celular');
         setMessageType('error');
@@ -112,22 +110,17 @@ const LoginScreen = ({ onLoginSuccess, onNavigateToSignup, onNavigateToAdminLogi
       setMessage('Verificando número de teléfono...');
       setMessageType('info');
       
-      // Verificar si el usuario existe en la base de datos
       const checkResult = await userManagementService.checkUserExists(phoneNumber);
       
       if (checkResult.success) {
         if (checkResult.exists) {
-          // El usuario existe, podemos continuar al paso de ingresar clave
-          setMessage('');
           setMessageType('');
           setCurrentStep(2);
           
-          // Limpiar timer anterior si existe
           if (timerRef.current) {
             clearInterval(timerRef.current);
           }
 
-          // Iniciar timer para reenvío
           setCanResend(false);
           setResendTimer(60);
           
@@ -145,14 +138,12 @@ const LoginScreen = ({ onLoginSuccess, onNavigateToSignup, onNavigateToAdminLogi
             });
           }, 1000);
         } else {
-          // El usuario no existe
           setMessage('El número no está registrado.');
           setMessageType('error');
           setIsVerifyingNumber(false);
           return;
         }
       } else {
-        // Handle specific error cases from user existence check
         const errorMessage = checkResult.error === 'NETWORK_ERROR'
           ? 'Error de conexión. Verifica tu internet e inténtalo de nuevo.'
           : checkResult.error === 'TIMEOUT_ERROR'
@@ -170,9 +161,8 @@ const LoginScreen = ({ onLoginSuccess, onNavigateToSignup, onNavigateToAdminLogi
       }
 
     } catch (error) {
-      console.error('[Login] Unexpected error during phone verification:', error);
+      console.error('[Login] Error during phone verification:', error);
       
-      // Handle different types of errors
       if (error instanceof TypeError && error.message.includes('Network request failed')) {
         setMessage('Error de conexión. Verifica tu internet e inténtalo de nuevo.');
       } else if (error instanceof Error && error.message.includes('timeout')) {
@@ -190,7 +180,6 @@ const LoginScreen = ({ onLoginSuccess, onNavigateToSignup, onNavigateToAdminLogi
   };
 
   const handleBack = () => {
-    // Limpiar timer si existe
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
@@ -207,11 +196,9 @@ const LoginScreen = ({ onLoginSuccess, onNavigateToSignup, onNavigateToAdminLogi
 
   const handleLogin = async () => {
     try {
-      // Reset error states
       setMessage('');
       setMessageType('');
 
-      // Input validation
       if (!code?.trim()) {
         setMessage('Ingresa tu PIN');
         setMessageType('error');
@@ -233,21 +220,18 @@ const LoginScreen = ({ onLoginSuccess, onNavigateToSignup, onNavigateToAdminLogi
       setMessage('Iniciando sesión...');
       setMessageType('info');
       
-      // Iniciar sesión con el número de teléfono y el PIN (contraseña)
       const loginResult = await userManagementService.loginUser(phoneNumber, code);
       
       if (loginResult.success) {
         setMessage('Sesión iniciada correctamente');
         setMessageType('success');
         
-        // Después de un breve retraso, navegar a la pantalla principal
         setTimeout(() => {
           const userName = loginResult.user?.name || phoneNumber;
           console.log('Login successful, user name:', userName);
           onLoginSuccess(phoneNumber, userName);
         }, 1000);
       } else {
-        // Handle specific login errors with better user feedback
         const errorMessage = loginResult.error === 'NETWORK_ERROR'
           ? 'Error de conexión. Verifica tu internet e inténtalo de nuevo.'
           : loginResult.error === 'TIMEOUT_ERROR'
@@ -265,20 +249,17 @@ const LoginScreen = ({ onLoginSuccess, onNavigateToSignup, onNavigateToAdminLogi
         setMessage(errorMessage);
         setMessageType('error');
         
-        // Limpiar campos de código
         setCode('');
         setShowCode(['', '', '', '']);
         
-        // Enfocar el primer campo
         setTimeout(() => {
           codeInputRefs[0].current?.focus();
         }, 100);
       }
 
     } catch (error) {
-      console.error('[Login] Unexpected error during login:', error);
+      console.error('[Login] Error during login:', error);
       
-      // Handle different types of errors
       if (error instanceof TypeError && error.message.includes('Network request failed')) {
         setMessage('Error de conexión. Verifica tu internet e inténtalo de nuevo.');
       } else if (error instanceof Error && error.message.includes('timeout')) {
@@ -289,11 +270,9 @@ const LoginScreen = ({ onLoginSuccess, onNavigateToSignup, onNavigateToAdminLogi
       
       setMessageType('error');
 
-      // Limpiar campos de código
       setCode('');
       setShowCode(['', '', '', '']);
       
-      // Enfocar el primer campo
       setTimeout(() => {
         codeInputRefs[0].current?.focus();
       }, 100);

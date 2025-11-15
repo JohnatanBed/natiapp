@@ -1,15 +1,11 @@
 const Amount = require('../models/Amount');
 const User = require('../models/User');
 
-// @desc    Create a new amount record
-// @route   POST /api/amounts
-// @access  Private
 exports.createAmount = async (req, res, next) => {
   try {
     const { money } = req.body;
     const user_id = req.isAdmin ? req.user.id_admin : req.user.id_user;
 
-    // Validate amount
     if (!money || isNaN(parseFloat(money)) || parseFloat(money) <= 0) {
       return res.status(400).json({
         success: false,
@@ -18,7 +14,6 @@ exports.createAmount = async (req, res, next) => {
       });
     }
 
-    // Create amount
     const amount = await Amount.create({
       user_id,
       money: parseFloat(money)
@@ -33,9 +28,6 @@ exports.createAmount = async (req, res, next) => {
   }
 };
 
-// @desc    Get all amount records (paginated)
-// @route   GET /api/amounts
-// @access  Private (Admin)
 exports.getAllAmounts = async (req, res, next) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -54,14 +46,10 @@ exports.getAllAmounts = async (req, res, next) => {
   }
 };
 
-// @desc    Get amount records by user_id
-// @route   GET /api/amounts/user/:user_id
-// @access  Private (Admin or Self)
 exports.getAmountsByUserId = async (req, res, next) => {
   try {
     const { user_id } = req.params;
     
-    // Check if user exists
     const userExists = await User.findById_user(user_id);
     if (!userExists) {
       return res.status(404).json({
@@ -71,7 +59,6 @@ exports.getAmountsByUserId = async (req, res, next) => {
       });
     }
 
-    // Authorization check: admin or self
     const currentUserId = req.isAdmin ? req.user.id_admin : req.user.id_user;
     if (!req.isAdmin && currentUserId !== parseInt(user_id)) {
       return res.status(403).json({
@@ -94,15 +81,10 @@ exports.getAmountsByUserId = async (req, res, next) => {
   }
 };
 
-// @desc    Get my amount records
-// @route   GET /api/amounts/me
-// @access  Private
 exports.getMyAmounts = async (req, res, next) => {
   try {
-    // Check if user is admin or regular user
     const user_id = req.isAdmin ? req.user.id_admin : req.user.id_user;
     
-    // Validate that user_id exists
     if (!user_id) {
       return res.status(400).json({
         success: false,
@@ -117,16 +99,13 @@ exports.getMyAmounts = async (req, res, next) => {
       success: true,
       message: 'Mis aportes recuperados exitosamente',
       total,
-      data: amounts // Ahora incluye la lista de aportes
+      data: amounts
     });
   } catch (error) {
     next(error);
   }
 };
 
-// @desc    Get amount record by id
-// @route   GET /api/amounts/:id_amount
-// @access  Private (Admin or Owner)
 exports.getAmountById = async (req, res, next) => {
   try {
     const { id_amount } = req.params;
@@ -140,7 +119,6 @@ exports.getAmountById = async (req, res, next) => {
       });
     }
 
-    // Authorization check: admin or owner
     const currentUserId = req.isAdmin ? req.user.id_admin : req.user.id_user;
     if (!req.isAdmin && currentUserId !== amount.user_id) {
       return res.status(403).json({
@@ -159,15 +137,11 @@ exports.getAmountById = async (req, res, next) => {
   }
 };
 
-// @desc    Update amount record
-// @route   PUT /api/amounts/:id_amount
-// @access  Private (Admin only)
 exports.updateAmount = async (req, res, next) => {
   try {
     const { id_amount } = req.params;
     const { money } = req.body;
 
-    // Check if amount exists
     const amount = await Amount.findById(id_amount);
     if (!amount) {
       return res.status(404).json({
@@ -210,14 +184,10 @@ exports.updateAmount = async (req, res, next) => {
   }
 };
 
-// @desc    Delete amount record
-// @route   DELETE /api/amounts/:id_amount
-// @access  Private (Admin only)
 exports.deleteAmount = async (req, res, next) => {
   try {
     const { id_amount } = req.params;
 
-    // Check if amount exists
     const amount = await Amount.findById(id_amount);
     if (!amount) {
       return res.status(404).json({
@@ -248,12 +218,8 @@ exports.deleteAmount = async (req, res, next) => {
   }
 };
 
-// @desc    Get total sum of amounts
-// @route   GET /api/amounts/total
-// @access  Private (Admin only)
 exports.getTotalAmount = async (req, res, next) => {
   try {
-    // Authorization check: admin only
     if (!req.isAdmin) {
       return res.status(403).json({
         success: false,

@@ -1,7 +1,6 @@
 const bcrypt = require('bcryptjs');
 const { query } = require('../config/db');
 
-// User model class
 class User {
   constructor(userData) {
     this.id_user = userData.id_user;
@@ -13,32 +12,26 @@ class User {
     this.registeredAt = userData.registeredAt || new Date();
   }
 
-  // Create a new user
   static async create(userData) {
-    // Check if user already exists
     const existingUser = await this.findOne({ phoneNumber: userData.phoneNumber });
     if (existingUser) {
       throw new Error('User already exists');
     }
     
-    // Asegurar que la contraseña sea exactamente 4 dígitos
     const password = String(userData.password).trim();
     const passwordRegex = /^\d{4}$/;
     if (!passwordRegex.test(password)) {
       throw new Error('Password must be exactly 4 digits');
     }
 
-    // Hash password
     const salt = await bcrypt.genSalt(10);
     userData.password = await bcrypt.hash(password, salt);
 
-    // Insert user into database
     const result = await query(
       'INSERT INTO users (name, phoneNumber, password, role, code_group) VALUES (?, ?, ?, ?, ?) RETURNING *',
       [userData.name, userData.phoneNumber, userData.password, userData.role || 'user', userData.code_group || null]
     );
 
-    // Return the newly created user with its id_user
     const newUser = result[0];
     return {
       id_user: newUser.id_user,
@@ -50,7 +43,6 @@ class User {
     };
   }
 
-  // Find user by specific criteria
   static async findOne(criteria) {
     let sql = 'SELECT * FROM users WHERE ';
     const params = [];
@@ -73,18 +65,15 @@ class User {
     return results[0];
   }
 
-  // Find user by id_user
   static async findById_user(id_user) {
     return this.findOne({ id_user });
   }
 
-  // Find all users with optional filters
   static async findAll(filters = {}) {
     let sql = 'SELECT id_user, name, phoneNumber, role, code_group, registeredAt FROM users';
     const params = [];
     const conditions = [];
 
-    // Apply filters if provided
     if (Object.keys(filters).length > 0) {
       for (const [key, value] of Object.entries(filters)) {
         conditions.push(`${key} = ?`);
@@ -104,21 +93,17 @@ class User {
     return results;
   }
 
-  // Update user
   static async updateOne(criteria, updateData) {
-    // First, find the user to update
     const user = await this.findOne(criteria);
     if (!user) {
       return { modifiedCount: 0 };
     }
 
-    // Handle password update
     if (updateData.password) {
       const salt = await bcrypt.genSalt(10);
       updateData.password = await bcrypt.hash(updateData.password, salt);
     }
 
-    // Build update query
     const updates = [];
     const params = [];
 
@@ -127,7 +112,6 @@ class User {
       params.push(value);
     }
 
-    // Add criteria to WHERE clause
     const conditions = [];
     for (const [key, value] of Object.entries(criteria)) {
       conditions.push(`${key} = ?`);
@@ -140,9 +124,7 @@ class User {
     return { modifiedCount: rowCount || 0 };
   }
 
-  // Delete user
   static async deleteOne(criteria) {
-    // Build delete query
     const conditions = [];
     const params = [];
 
@@ -157,7 +139,6 @@ class User {
     return { deletedCount: rowCount || 0 };
   }
 
-  // Match password
   static async matchPassword(id_user, enteredPassword) {
     const user = await this.findById_user(id_user);
     if (!user) return false;

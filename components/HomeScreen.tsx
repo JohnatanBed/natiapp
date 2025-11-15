@@ -139,17 +139,25 @@ const HomeScreen = ({ phoneNumber, name, onLogout }: HomeScreenProps) => {
           );
         }, 1500);
       } else {
-        const errorMessage = result.error === 'INVALID_CODE_GROUP'
-          ? 'El código de grupo no existe. Verifica e intenta nuevamente.'
-          : result.error === 'ALREADY_MEMBER'
-            ? 'Ya perteneces a este grupo.'
-            : result.error === 'NETWORK_ERROR'
-              ? 'Error de conexión. Verifica tu internet.'
-              : result.error === 'UNAUTHORIZED'
-                ? 'Debes iniciar sesión para unirte a un grupo.'
-                : result.message || 'Error al unirse al grupo';
+        let errorMsg = 'Error al unirse al grupo';
+        switch(result.error) {
+          case 'INVALID_CODE_GROUP':
+            errorMsg = 'El código de grupo no existe. Verifica e intenta nuevamente.';
+            break;
+          case 'ALREADY_MEMBER':
+            errorMsg = 'Ya perteneces a este grupo.';
+            break;
+          case 'NETWORK_ERROR':
+            errorMsg = 'Error de conexión. Verifica tu internet.';
+            break;
+          case 'UNAUTHORIZED':
+            errorMsg = 'Debes iniciar sesión para unirte a un grupo.';
+            break;
+          default:
+            errorMsg = result.message || 'Error al unirse al grupo';
+        }
 
-        setJoinMessage(errorMessage);
+        setJoinMessage(errorMsg);
         setJoinMessageType('error');
       }
     } catch (error) {

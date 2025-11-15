@@ -31,9 +31,7 @@ const AdminDashboard = ({ adminData, onLogout }: AdminDashboardProps) => {
     try {
       const result = await userManagementService.getAllUsers();
       if (result.success && result.users) {
-        // Normalize backend field names to expected camelCase
         const normalized = result.users.map((u: any) => ({
-          // preserve both id_user and id to keep downstream checks working
           id_user: u.id_user ?? (typeof u.id === 'number' ? u.id : Number(u.id)) ?? undefined,
           id: u.id ?? (u.id_user != null ? String(u.id_user) : undefined),
           name: u.name,
@@ -48,7 +46,6 @@ const AdminDashboard = ({ adminData, onLogout }: AdminDashboardProps) => {
 
         setUsers(normalized);
         setMessage('');
-        // Load amounts for all users
         loadUserAmounts(normalized as any);
       } else {
         setMessage(result.error || 'Error al cargar usuarios');
@@ -64,7 +61,6 @@ const AdminDashboard = ({ adminData, onLogout }: AdminDashboardProps) => {
   const loadUserAmounts = async (usersList: User[]) => {
     let grandTotal = 0;
     
-    // Load amounts for each user
     for (const user of usersList) {
       const userId = user.id_user || user.id;
       if (userId) {
@@ -97,7 +93,6 @@ const AdminDashboard = ({ adminData, onLogout }: AdminDashboardProps) => {
       }
     }
     
-    // Update the grand total
     setTotalAmountsSum(grandTotal);
   };
 

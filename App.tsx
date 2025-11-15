@@ -1,8 +1,3 @@
-/**
- * NatiApp - React Native Application
- * @format
- */
-
 import React, { useState, useEffect } from 'react';
 import { StatusBar, View, Alert } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -19,14 +14,11 @@ import LoanScreen from './components/LoanScreen';
 const Stack = createStackNavigator();
 
 function App() {
-  // Global error handler
   useEffect(() => {
     const originalHandler = ErrorUtils.getGlobalHandler();
 
     ErrorUtils.setGlobalHandler((error, isFatal) => {
-      console.error('[App] Global error caught:', error);
-
-      // Show user-friendly error message
+      console.error('[App] Error:', error);
       if (isFatal) {
         Alert.alert(
           'Error Crítico',
@@ -34,13 +26,7 @@ function App() {
           [
             {
               text: 'Reiniciar',
-              onPress: () => {
-                // Reset app state
-                //setCurrentScreen('login');
-                //setUserPhoneNumber('');
-                //setUserName('');
-                //setAdminData(null);67
-              }
+              onPress: () => {}
             }
           ],
           { cancelable: false }
@@ -59,11 +45,7 @@ function App() {
       }
     });
 
-    return () => {
-      if (originalHandler) {
-        ErrorUtils.setGlobalHandler(originalHandler);
-      }
-    };
+    return () => originalHandler && ErrorUtils.setGlobalHandler(originalHandler);
   }, []);
 
   return (

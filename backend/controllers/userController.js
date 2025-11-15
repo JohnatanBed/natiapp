@@ -2,9 +2,6 @@ const User = require('../models/User');
 const Admin = require('../models/Admin');
 const GroupMember = require('../models/GroupMember');
 
-// @desc    Get all users
-// @route   GET /api/users
-// @access  Private/Admin
 exports.getUsers = async (req, res, next) => {
   try {
     const users = await User.findAll({ role: 'user' });
@@ -24,9 +21,6 @@ exports.getUsers = async (req, res, next) => {
   }
 };
 
-// @desc    Toggle user status (active/inactive)
-// @route   PUT /api/users/:id/status
-// @access  Private/Admin
 exports.toggleUserStatus = async (req, res, next) => {
   try {
     const user = await User.findById_user(req.params.id);
@@ -38,14 +32,12 @@ exports.toggleUserStatus = async (req, res, next) => {
       });
     }
     
-    // Toggle user status
     const newActiveStatus = !user.active;
     await User.updateOne(
       { id_user: req.params.id },
       { active: newActiveStatus }
     );
     
-    // Get updated user
     const updatedUser = await User.findById_user(req.params.id);
     
     res.status(200).json({
@@ -58,15 +50,11 @@ exports.toggleUserStatus = async (req, res, next) => {
   }
 };
 
-// @desc    Join a group using admin's code_group
-// @route   POST /api/users/join-group
-// @access  Private (authenticated users)
 exports.joinGroup = async (req, res, next) => {
   try {
     const { code_group } = req.body;
     const userId = req.user?.id_user || req.user?.id;
 
-    // Validate input
     if (!code_group?.trim()) {
       return res.status(400).json({
         success: false,
@@ -75,7 +63,6 @@ exports.joinGroup = async (req, res, next) => {
       });
     }
 
-    // Validate user is authenticated
     if (!userId) {
       return res.status(401).json({
         success: false,
@@ -84,7 +71,6 @@ exports.joinGroup = async (req, res, next) => {
       });
     }
 
-    // Find admin by code_group
     const admin = await Admin.findByCodeGroup(code_group.trim());
     
     if (!admin) {
@@ -95,7 +81,6 @@ exports.joinGroup = async (req, res, next) => {
       });
     }
 
-    // Find the user
     const user = await User.findById_user(userId);
     
     if (!user) {
@@ -106,7 +91,6 @@ exports.joinGroup = async (req, res, next) => {
       });
     }
 
-    // Check if user is already a member of this group
     const existingMembership = await GroupMember.findOne({
       admin_id: admin.id_admin,
       user_id: userId
@@ -120,13 +104,11 @@ exports.joinGroup = async (req, res, next) => {
       });
     }
 
-    // Update user's code_group
     await User.updateOne(
       { id_user: userId },
       { code_group: code_group.trim() }
     );
 
-    // Register the relationship in group_members table
     await GroupMember.create({
       admin_id: admin.id_admin,
       user_id: userId
@@ -144,7 +126,6 @@ exports.joinGroup = async (req, res, next) => {
   } catch (error) {
     console.error('[UserController] Error in joinGroup:', error);
     
-    // Handle specific error from GroupMember.create
     if (error.message === 'User is already a member of this group') {
       return res.status(400).json({
         success: false,

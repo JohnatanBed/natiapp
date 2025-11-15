@@ -31,7 +31,6 @@ const SignupScreen = ({ onSignupSuccess, onBackToLogin }: SignupScreenProps) => 
   const [canResend, setCanResend] = useState(false);
   const [resendTimer, setResendTimer] = useState(60);
 
-  // Referencias para cada casilla de código
   const codeInputRefs = [
     useRef<TextInput>(null),
     useRef<TextInput>(null),
@@ -39,7 +38,6 @@ const SignupScreen = ({ onSignupSuccess, onBackToLogin }: SignupScreenProps) => 
     useRef<TextInput>(null),
   ];
 
-  // Referencias para cada casilla de PIN
   const pinInputRefs = [
     useRef<TextInput>(null),
     useRef<TextInput>(null),
@@ -47,7 +45,6 @@ const SignupScreen = ({ onSignupSuccess, onBackToLogin }: SignupScreenProps) => 
     useRef<TextInput>(null),
   ];
 
-  // Referencias para cada casilla de confirmación de PIN
   const confirmPinInputRefs = [
     useRef<TextInput>(null),
     useRef<TextInput>(null),
@@ -55,7 +52,6 @@ const SignupScreen = ({ onSignupSuccess, onBackToLogin }: SignupScreenProps) => 
     useRef<TextInput>(null),
   ];
 
-  // Timer para reenvío de código
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
 
@@ -76,7 +72,6 @@ const SignupScreen = ({ onSignupSuccess, onBackToLogin }: SignupScreenProps) => 
     };
   }, [currentStep, canResend, resendTimer]);
 
-  // Función para manejar el cambio en las casillas de código
   const handleCodeChange = (text: string, index: number) => {
     const numericText = text.replace(/[^0-9]/g, '');
 

@@ -1,27 +1,19 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 
-// Helper function to generate JWT token
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: '30d'
   });
 };
 
-// @desc    Register user
-// @route   POST /api/auth/register
-// @access  Public
 exports.register = async (req, res, next) => {
   try {
     let { name, phoneNumber, password } = req.body;
     
-    // Asegurar que password sea un string
     password = String(password);
-    
-    // Eliminar espacios en blanco
     password = password.trim();
     
-    // Verificar si la contraseña contiene exactamente 4 dígitos
     const passwordRegex = /^\d{4}$/;
     if (!passwordRegex.test(password)) {
       return res.status(400).json({
@@ -31,7 +23,6 @@ exports.register = async (req, res, next) => {
       });
     }
     
-    // Check if user with phoneNumber already exists
     const userExists = await User.findOne({ phoneNumber });
     
     if (userExists) {
@@ -43,14 +34,12 @@ exports.register = async (req, res, next) => {
       });
     }
     
-    // Create user
     const user = await User.create({
       name,
       phoneNumber,
       password
     });
         
-    // Create and return JWT token
     const token = generateToken(user.id_user);
     
     res.status(201).json({
@@ -70,20 +59,13 @@ exports.register = async (req, res, next) => {
   }
 };
 
-// @desc    Login user
-// @route   POST /api/auth/login
-// @access  Public
 exports.login = async (req, res, next) => {
   try {
     let { phoneNumber, password } = req.body;
 
-    // Asegurar que password sea un string
     password = String(password);
-    
-    // Eliminar espacios en blanco
     password = password.trim();
     
-    // Validate password is exactly 4 digits
     const passwordRegex = /^\d{4}$/;
     if (!passwordRegex.test(password)) {
       return res.status(400).json({
@@ -93,7 +75,6 @@ exports.login = async (req, res, next) => {
       });
     }
     
-    // Check if user exists
     const user = await User.findOne({ phoneNumber });
     
     if (!user) {
@@ -105,7 +86,6 @@ exports.login = async (req, res, next) => {
       });
     }
     
-    // Check if password matches
     const isMatch = await User.matchPassword(user.id_user, password);
     
     if (!isMatch) {
@@ -119,7 +99,6 @@ exports.login = async (req, res, next) => {
     
     console.log('[Backend] Login successful for:', phoneNumber);
     
-    // Create and return JWT token
     const token = generateToken(user.id_user);
     
     res.status(200).json({
@@ -139,27 +118,10 @@ exports.login = async (req, res, next) => {
   }
 };
 
-// @desc    Admin login
-// @route   POST /api/auth/admin-login
-// @access  Public
 exports.adminLogin = async (req, res, next) => {
   try {
     const { email, password } = req.body;
     
-    // Para administradores, permitimos contraseñas más complejas (no hay restricción de 4 dígitos)
-    // Si quisieras aplicar la misma restricción, descomenta el código a continuación
-    /*
-    const passwordRegex = /^\d{4}$/;
-    if (!passwordRegex.test(password)) {
-      return res.status(400).json({
-        success: false,
-        message: 'La contraseña debe ser de 4 dígitos exactamente',
-        error: 'Password must be exactly 4 digits'
-      });
-    }
-    */
-    
-    // Use the Admin model to find the admin by email
     const Admin = require('../models/Admin');
     const admin = await Admin.findOne({ email });
     
@@ -171,7 +133,6 @@ exports.adminLogin = async (req, res, next) => {
       });
     }
     
-    // Check if password matches
     const isMatch = await Admin.matchPassword(admin.id_admin, password);
     
     if (!isMatch) {
@@ -182,7 +143,6 @@ exports.adminLogin = async (req, res, next) => {
       });
     }
     
-    // Create and return JWT token
     const token = generateToken(admin.id_admin);
     
     res.status(200).json({
@@ -203,14 +163,10 @@ exports.adminLogin = async (req, res, next) => {
   }
 };
 
-// @desc    Register admin
-// @route   POST /api/auth/admin-register
-// @access  Public
 exports.adminRegister = async (req, res, next) => {
   try {
     const { name, email, password, code_group } = req.body;
     
-    // Input validation
     if (!name?.trim()) {
       return res.status(400).json({
         success: false,
@@ -243,7 +199,6 @@ exports.adminRegister = async (req, res, next) => {
       });
     }
 
-    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.trim())) {
       return res.status(400).json({
@@ -253,7 +208,6 @@ exports.adminRegister = async (req, res, next) => {
       });
     }
 
-    // Password length validation
     if (password.trim().length < 6) {
       return res.status(400).json({
         success: false,
@@ -262,7 +216,6 @@ exports.adminRegister = async (req, res, next) => {
       });
     }
 
-    // Code group length validation
     if (code_group.trim().length < 4) {
       return res.status(400).json({
         success: false,
@@ -271,11 +224,9 @@ exports.adminRegister = async (req, res, next) => {
       });
     }
     
-    // Use the Admin model to create a new admin
     const Admin = require('../models/Admin');
     
     try {
-      // Create admin
       const admin = await Admin.create({
         name: name.trim(),
         email: email.trim(),
@@ -284,7 +235,6 @@ exports.adminRegister = async (req, res, next) => {
         role: 'admin'
       });
       
-      // Create and return JWT token
       const token = generateToken(admin.id_admin);
       
       res.status(201).json({
@@ -301,7 +251,6 @@ exports.adminRegister = async (req, res, next) => {
         token
       });
     } catch (adminError) {
-      // Handle specific admin creation errors
       if (adminError.message.includes('email already exists')) {
         return res.status(400).json({
           success: false,
@@ -315,7 +264,7 @@ exports.adminRegister = async (req, res, next) => {
           error: 'CODE_GROUP_EXISTS'
         });
       } else {
-        throw adminError; // Re-throw other errors to be handled by error middleware
+        throw adminError;
       }
     }
   } catch (error) {
@@ -323,13 +272,8 @@ exports.adminRegister = async (req, res, next) => {
   }
 };
 
-// @desc    Check if user exists by phone number
-// @route   POST /api/auth/check-user
-// @access  Public
 const normalizePhoneNumber = (phoneNumber) => {
-    // Elimina todos los caracteres no numéricos
     const cleaned = phoneNumber.replace(/\D/g, '');
-    // Retorna el número normalizado
     return cleaned;
 };
 
@@ -337,20 +281,17 @@ exports.checkUser = async (req, res, next) => {
   try {
     let { phoneNumber } = req.body;
     
-    // Normalize phone number for consistency
     phoneNumber = normalizePhoneNumber(phoneNumber);
     console.log('[Backend] Checking user existence for normalized phone:', phoneNumber);
     
-    // Check if user exists
     const user = await User.findOne({ phoneNumber });
     
     console.log('[Backend] User check result:', { exists: !!user, phoneNumber });
     
     res.status(200).json({
       success: true,
-      exists: !!user, // Convert to boolean
+      exists: !!user,
       message: user ? 'Usuario encontrado' : 'Usuario no encontrado',
-      // Only return minimal info if user exists
       user: user ? { 
         id: user._id,
         phoneNumber: user.phoneNumber
@@ -362,12 +303,8 @@ exports.checkUser = async (req, res, next) => {
   }
 };
 
-// @desc    Get current logged-in user
-// @route   GET /api/auth/me
-// @access  Private
 exports.getMe = async (req, res, next) => {
   try {
-    // If the request is from an admin (marked by auth middleware)
     if (req.isAdmin) {
       const admin = req.user;
       
@@ -385,7 +322,6 @@ exports.getMe = async (req, res, next) => {
       });
     }
     
-    // Regular user
     const user = req.user;
     
     res.status(200).json({

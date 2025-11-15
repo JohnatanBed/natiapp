@@ -1,15 +1,11 @@
 const Loan = require('../models/Loan');
 const User = require('../models/User');
 
-// @desc    Create a new loan request
-// @route   POST /api/loans
-// @access  Private
 exports.createLoan = async (req, res, next) => {
   try {
     const { amount } = req.body;
     const user_id = req.isAdmin ? req.user.id_admin : req.user.id_user;
 
-    // Validate amount
     if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
       return res.status(400).json({
         success: false,
@@ -18,7 +14,6 @@ exports.createLoan = async (req, res, next) => {
       });
     }
 
-    // Create loan request
     const loan = await Loan.create({
       user_id,
       amount: parseFloat(amount),
@@ -35,12 +30,8 @@ exports.createLoan = async (req, res, next) => {
   }
 };
 
-// @desc    Get all loan requests (paginated)
-// @route   GET /api/loans
-// @access  Private (Admin)
 exports.getAllLoans = async (req, res, next) => {
   try {
-    // Authorization check: admin only
     if (!req.isAdmin) {
       return res.status(403).json({
         success: false,
@@ -72,9 +63,6 @@ exports.getAllLoans = async (req, res, next) => {
   }
 };
 
-// @desc    Get my loan requests
-// @route   GET /api/loans/me
-// @access  Private
 exports.getMyLoans = async (req, res, next) => {
   try {
     const user_id = req.isAdmin ? req.user.id_admin : req.user.id_user;
@@ -90,9 +78,6 @@ exports.getMyLoans = async (req, res, next) => {
   }
 };
 
-// @desc    Get loan by ID
-// @route   GET /api/loans/:id_loan
-// @access  Private (Admin or Owner)
 exports.getLoanById = async (req, res, next) => {
   try {
     const { id_loan } = req.params;
@@ -106,7 +91,6 @@ exports.getLoanById = async (req, res, next) => {
       });
     }
 
-    // Authorization check: admin or owner
     const currentUserId = req.isAdmin ? req.user.id_admin : req.user.id_user;
     if (!req.isAdmin && currentUserId !== loan.user_id) {
       return res.status(403).json({
@@ -126,15 +110,11 @@ exports.getLoanById = async (req, res, next) => {
   }
 };
 
-// @desc    Update loan status (approve/reject)
-// @route   PUT /api/loans/:id_loan/status
-// @access  Private (Admin only)
 exports.updateLoanStatus = async (req, res, next) => {
   try {
     const { id_loan } = req.params;
     const { status } = req.body;
 
-    // Authorization check: admin only
     if (!req.isAdmin) {
       return res.status(403).json({
         success: false,
@@ -143,7 +123,6 @@ exports.updateLoanStatus = async (req, res, next) => {
       });
     }
 
-    // Check if loan exists
     const loan = await Loan.findById(id_loan);
     if (!loan) {
       return res.status(404).json({
@@ -153,7 +132,6 @@ exports.updateLoanStatus = async (req, res, next) => {
       });
     }
 
-    // Validate status
     const validStatuses = ['pending', 'approved', 'rejected'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({
@@ -175,14 +153,10 @@ exports.updateLoanStatus = async (req, res, next) => {
   }
 };
 
-// @desc    Delete loan (only if pending)
-// @route   DELETE /api/loans/:id_loan
-// @access  Private (Admin or Owner if pending)
 exports.deleteLoan = async (req, res, next) => {
   try {
     const { id_loan } = req.params;
 
-    // Check if loan exists
     const loan = await Loan.findById(id_loan);
     if (!loan) {
       return res.status(404).json({
@@ -192,7 +166,6 @@ exports.deleteLoan = async (req, res, next) => {
       });
     }
 
-    // Authorization check: admin or owner (only if pending)
     const currentUserId = req.isAdmin ? req.user.id_admin : req.user.id_user;
     if (!req.isAdmin && currentUserId !== loan.user_id) {
       return res.status(403).json({
