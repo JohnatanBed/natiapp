@@ -1,6 +1,5 @@
 const { query } = require('../config/db');
 
-// Loan model class
 class Loan {
   constructor(loanData) {
     this.id_loan = loanData.id_loan;
@@ -10,9 +9,7 @@ class Loan {
     this.request_date = loanData.request_date || new Date();
   }
 
-  // Create a new loan request
   static async create(loanData) {
-    // Check if user exists
     const userExistsQuery = 'SELECT id_user FROM users WHERE id_user = ? LIMIT 1';
     const userExists = await query(userExistsQuery, [loanData.user_id]);
     
@@ -20,12 +17,10 @@ class Loan {
       throw new Error('User does not exist');
     }
 
-    // Validate amount
     if (!loanData.amount || isNaN(parseFloat(loanData.amount)) || parseFloat(loanData.amount) <= 0) {
       throw new Error('Invalid loan amount');
     }
 
-    // Insert loan into database
     const sql = 'INSERT INTO loans (user_id, amount, status) VALUES (?, ?, ?)';
     const params = [
       loanData.user_id,
@@ -36,7 +31,6 @@ class Loan {
     const result = await query(sql + ' RETURNING *', params);
     const newLoan = result[0];
 
-    // Return the newly created loan record with its ID
     return {
       id_loan: newLoan.id_loan,
       user_id: newLoan.user_id,
@@ -46,7 +40,6 @@ class Loan {
     };
   }
 
-  // Get all loans with pagination
   static async findAll(page = 1, limit = 10) {
     const offset = (page - 1) * limit;
     const sql = `
@@ -61,7 +54,6 @@ class Loan {
     return loans;
   }
 
-  // Get loans by user ID
   static async findByUserId(user_id) {
     const sql = `
       SELECT * FROM loans 
@@ -73,7 +65,6 @@ class Loan {
     return loans;
   }
 
-  // Get loan by ID
   static async findById(id_loan) {
     const sql = `
       SELECT l.*, u.name, u.phoneNumber 
@@ -87,9 +78,7 @@ class Loan {
     return loans.length > 0 ? loans[0] : null;
   }
 
-  // Update loan status
   static async updateStatus(id_loan, status) {
-    // Validate status
     const validStatuses = ['pending', 'approved', 'rejected'];
     if (!validStatuses.includes(status)) {
       throw new Error('Invalid status. Must be pending, approved, or rejected');
@@ -104,7 +93,6 @@ class Loan {
     };
   }
 
-  // Get total amount of loans by status
   static async getTotalByStatus(status = null) {
     let sql = 'SELECT SUM(amount) as total FROM loans';
     const params = [];
@@ -118,7 +106,6 @@ class Loan {
     return parseFloat(result[0].total) || 0;
   }
 
-  // Get loans count by status
   static async getCountByStatus(status = null) {
     let sql = 'SELECT COUNT(*) as count FROM loans';
     const params = [];
@@ -132,9 +119,7 @@ class Loan {
     return parseInt(result[0].count) || 0;
   }
 
-  // Delete a loan (only if pending)
   static async delete(id_loan) {
-    // Check if loan is pending before deleting
     const loan = await this.findById(id_loan);
     if (!loan) {
       throw new Error('Loan not found');

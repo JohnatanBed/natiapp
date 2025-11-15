@@ -34,7 +34,6 @@ const LoanScreen = ({ phoneNumber, onBack }: LoanScreenProps) => {
         }
     };
 
-    // Obtener el total acumulado del usuario
     useEffect(() => {
         const fetchTotal = async () => {
             try {
@@ -45,7 +44,6 @@ const LoanScreen = ({ phoneNumber, onBack }: LoanScreenProps) => {
             }
         };
         fetchTotal();
-        // Fetch user's loans
         const fetchLoans = async () => {
             try {
                 const res = await apiService.get<any>('/loans/me');
@@ -59,11 +57,10 @@ const LoanScreen = ({ phoneNumber, onBack }: LoanScreenProps) => {
         fetchLoans();
     }, [phoneNumber]);
 
-    // Reglas de préstamo
     const evaluateLoanRequest = (requested: number, currentTotal: number): Evaluation => {
-        const maxPercentage = 0.5;        // 50% del acumulado
-        const minLoan = 50000;           // mínimo
-        const hardCap = currentTotal * 0.5;         // tope absoluto
+        const maxPercentage = 0.5;
+        const minLoan = 50000;
+        const hardCap = currentTotal * 0.5;
         if (currentTotal < 100000) {
             return { viable: false, maxLoan: 0, ratio: 0, reason: 'No tienes acumulado suficiente para préstamos.' };
         }

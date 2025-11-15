@@ -12,7 +12,7 @@ interface AmountHistory {
     id_amount: number;
     money: number;
     registeredAt?: string;
-    registeredat?: string; // PostgreSQL devuelve en minúsculas
+    registeredat?: string;
     screenshot?: string;
 }
 
@@ -23,9 +23,7 @@ const HistoryScreen = ({ phoneNumber, onBack }: HistoryScreenProps) => {
     useEffect(() => {
         const fetchHistory = async () => {
             try {
-                // Asume que el endpoint devuelve { success, data: [...] }
                 const res = await apiService.get<{ success: boolean; data: AmountHistory[] }>(`/amounts/me`);
-                // Normalizar los datos: mapear registeredat a registeredAt
                 const normalizedData = (res.data || []).map(item => ({
                     ...item,
                     registeredAt: item.registeredAt || item.registeredat

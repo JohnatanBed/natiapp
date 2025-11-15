@@ -1,8 +1,3 @@
-/**
- * SMS Formatter Utilities
- * Helper functions for formatting and validating SMS-related data
- */
-
 export interface PhoneNumberInfo {
   original: string;
   formatted: string;
@@ -23,11 +18,6 @@ class SMSFormatterUtils {
   private readonly COLOMBIA_COUNTRY_CODE = '+57';
   private readonly MOBILE_PREFIX_REGEX = /^3[0-9]/; // Colombian mobile numbers start with 3
 
-  /**
-   * Format Colombian phone number to standard format
-   * @param phoneNumber - Raw phone number input
-   * @returns Formatted phone number info
-   */
   formatColombianPhone(phoneNumber: string): PhoneNumberInfo {
     // Remove all non-digit characters
     const digitsOnly = phoneNumber.replace(/\D/g, '');
@@ -64,42 +54,21 @@ class SMSFormatterUtils {
     };
   }
 
-  /**
-   * Validate Colombian phone number
-   * @param phoneNumber - Phone number to validate
-   * @returns True if valid Colombian mobile number
-   */
   isValidColombianMobile(phoneNumber: string): boolean {
     const phoneInfo = this.formatColombianPhone(phoneNumber);
     return phoneInfo.isValid;
   }
 
-  /**
-   * Format phone number for display
-   * @param phoneNumber - Raw phone number
-   * @returns Formatted display string
-   */
   formatForDisplay(phoneNumber: string): string {
     const phoneInfo = this.formatColombianPhone(phoneNumber);
     return phoneInfo.display;
   }
 
-  /**
-   * Format phone number for API/backend
-   * @param phoneNumber - Raw phone number
-   * @returns Clean 10-digit number or null if invalid
-   */
   formatForAPI(phoneNumber: string): string | null {
     const phoneInfo = this.formatColombianPhone(phoneNumber);
     return phoneInfo.isValid ? phoneInfo.formatted : null;
   }
 
-  /**
-   * Generate SMS verification template
-   * @param code - Verification code
-   * @param config - SMS template configuration
-   * @returns Formatted SMS message
-   */
   generateVerificationSMS(code: string, config: SMSTemplateConfig): string {
     const { appName, expirationMinutes, includeAppHash } = config;
     
@@ -120,12 +89,6 @@ class SMSFormatterUtils {
     return message;
   }
 
-  /**
-   * Extract verification code from SMS content
-   * @param smsContent - Full SMS message content
-   * @param codeLength - Expected code length (default: 4)
-   * @returns Extracted code or null
-   */
   extractVerificationCode(smsContent: string, codeLength: number = 4): string | null {
     if (!smsContent) return null;
 
@@ -152,20 +115,10 @@ class SMSFormatterUtils {
     return null;
   }
 
-  /**
-   * Sanitize phone number input (remove unwanted characters)
-   * @param input - Raw input
-   * @returns Sanitized numeric string
-   */
   sanitizePhoneInput(input: string): string {
     return input.replace(/[^\d]/g, '');
   }
 
-  /**
-   * Format phone input for user typing (adds spaces as they type)
-   * @param input - Current input value
-   * @returns Formatted input with spacing
-   */
   formatPhoneInput(input: string): string {
     const digits = this.sanitizePhoneInput(input);
     
@@ -178,12 +131,6 @@ class SMSFormatterUtils {
     return `${digits.substring(0, 3)} ${digits.substring(3, 6)} ${digits.substring(6, 10)}`;
   }
 
-  /**
-   * Validate SMS verification code format
-   * @param code - Code to validate
-   * @param expectedLength - Expected code length
-   * @returns Validation result
-   */
   validateVerificationCode(code: string, expectedLength: number = 4): { 
     isValid: boolean; 
     error?: string 
@@ -209,12 +156,6 @@ class SMSFormatterUtils {
     return { isValid: true };
   }
 
-  /**
-   * Check if SMS content appears to be a verification SMS
-   * @param smsContent - SMS message content
-   * @param appName - App name to look for
-   * @returns True if appears to be verification SMS
-   */
   isVerificationSMS(smsContent: string, appName?: string): boolean {
     if (!smsContent) return false;
 

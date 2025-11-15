@@ -38,27 +38,22 @@ exports.getUserStatistics = async (req, res, next) => {
 // @access  Admin only
 exports.getAllUsers = async (req, res, next) => {
   try {
-    // Get admin's code_group and id
     const adminCodeGroup = req.user.code_group;
     const adminId = req.user.id_admin;
     
     console.log('[getAllUsers] Admin code_group:', adminCodeGroup);
     console.log('[getAllUsers] Admin id:', adminId);
     
-    // Get users from group_members table associated with this admin
     const GroupMember = require('../models/GroupMember');
     const groupMembers = await GroupMember.findByAdminId(adminId);
     
     console.log('[getAllUsers] Group members found:', groupMembers.length);
     
-    // Get user IDs from group members
     const userIds = groupMembers.map(gm => gm.user_id);
     
-    // If there are no group members, also check by code_group
     let users = [];
     
     if (userIds.length > 0) {
-      // Get user details for all members
       for (const userId of userIds) {
         const user = await User.findById_user(userId);
         if (user) {
@@ -67,10 +62,8 @@ exports.getAllUsers = async (req, res, next) => {
       }
     }
     
-    // Also include users with matching code_group who might not be in group_members yet
     const usersByCodeGroup = await User.findAll({ code_group: adminCodeGroup });
     
-    // Merge both lists, avoiding duplicates
     const allUsers = [...users];
     for (const user of usersByCodeGroup) {
       if (!allUsers.find(u => u.id_user === user.id_user)) {
@@ -82,11 +75,10 @@ exports.getAllUsers = async (req, res, next) => {
     console.log('[getAllUsers] Users data:', allUsers);
     console.log('[getAllUsers] Sending response...');
     
-    // Send response immediately - frontend expects 'users' not 'data'
     return res.status(200).json({
       success: true,
       count: allUsers.length,
-      users: allUsers  // Changed from 'data' to 'users'
+      users: allUsers
     });
   } catch (error) {
     console.error('[getAllUsers] Error:', error);

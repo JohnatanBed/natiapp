@@ -110,11 +110,6 @@ class UserManagementService {
     });
   }
 
-  /**
-   * Normalize phone number to ensure consistency
-   * @param phoneNumber - Raw phone number
-   * @returns Normalized phone number (10 digits only)
-   */
   private normalizePhoneNumber(phoneNumber: string): string {
     // Remove all non-numeric characters
     const cleaned = phoneNumber.replace(/\D/g, '');
@@ -133,13 +128,6 @@ class UserManagementService {
     return cleaned;
   }
 
-  /**
-   * Register a new user
-   * @param name - User's full name
-   * @param phoneNumber - User's phone number
-   * @param password - User's password
-   * @returns Promise with registration response
-   */
   async registerUser(name: string, phoneNumber: string, password: string): Promise<UserRegistrationResponse> {
     try {
       // Validate input parameters
@@ -202,14 +190,12 @@ class UserManagementService {
           }, 500);
         });
       } else {
-        // Use the real backend API
         const response = await apiService.post<UserRegistrationResponse>('/auth/register', {
           name: name.trim(),
           phoneNumber: normalizedPhone,
           password
         });
         
-        // Store the token if registration was successful
         if (response.success && response.token) {
           await apiService.setToken(response.token);
         }
@@ -219,7 +205,6 @@ class UserManagementService {
     } catch (error) {
       console.error('[UserManagementService] Registration error:', error);
       
-      // Handle specific error types
       if (error instanceof TypeError && error.message.includes('Network request failed')) {
         return {
           success: false,
@@ -244,15 +229,8 @@ class UserManagementService {
     }
   }
 
-  /**
-   * Login user
-   * @param phoneNumber - User's phone number
-   * @param password - User's password
-   * @returns Promise with login response
-   */
   async checkUserExists(phoneNumber: string): Promise<CheckUserResponse> {
     try {
-      // Validate input parameters
       if (!phoneNumber?.trim()) {
         return {
           success: false,
@@ -262,11 +240,9 @@ class UserManagementService {
         };
       }
 
-      // Normalize phone number for consistency
-      const normalizedPhone = this.normalizePhoneNumber(phoneNumber); // Asegúrate de usar 'this'
-      console.log('[UserManagementService] Checking user existence for normalized phone:', normalizedPhone, 'original:', phoneNumber);
+      const normalizedPhone = this.normalizePhoneNumber(phoneNumber);
+      console.log('[UserManagementService] Checking user:', normalizedPhone);
       
-      // Additional phone validation
       if (normalizedPhone.length !== 10 || !normalizedPhone.startsWith('3')) {
         return {
           success: false,
@@ -277,7 +253,6 @@ class UserManagementService {
       }
 
       if (this.isDevelopment) {
-        // Mock user check for development
         return new Promise((resolve) => {
           setTimeout(() => {
             try {
@@ -496,11 +471,6 @@ class UserManagementService {
     }
   }
 
-  /**
-   * Update user's last login timestamp
-   * @param phoneNumber - User's phone number
-   * @returns Promise with update result
-   */
   async updateLastLogin(phoneNumber: string): Promise<{ success: boolean; error?: string }> {
     try {
       if (this.isDevelopment) {
@@ -528,12 +498,6 @@ class UserManagementService {
     }
   }
 
-  /**
-   * Admin login
-   * @param email - Admin email
-   * @param password - Admin password
-   * @returns Promise with admin login response
-   */
   async adminLogin(email: string, password: string): Promise<AdminLoginResponse> {
     try {
       // Validate input parameters
@@ -651,14 +615,6 @@ class UserManagementService {
     }
   }
 
-  /**
-   * Admin registration
-   * @param name - Admin name
-   * @param email - Admin email
-   * @param password - Admin password
-   * @param codeGroup - Admin code group
-   * @returns Promise with admin registration response
-   */
   async adminRegister(name: string, email: string, password: string, codeGroup: string): Promise<AdminRegisterResponse> {
     try {
       // Validate input parameters
@@ -822,10 +778,6 @@ class UserManagementService {
     }
   }
 
-  /**
-   * Get all users (admin only)
-   * @returns Promise with user list response
-   */
   async getAllUsers(): Promise<UserListResponse> {
     try {
       if (this.isDevelopment) {
@@ -891,11 +843,6 @@ class UserManagementService {
     }
   }
 
-  /**
-   * Get total amounts for a specific user
-   * @param userId - User ID to get amounts for
-   * @returns Promise with user amount response
-   */
   async getUserTotalAmounts(userId: number): Promise<UserAmountResponse> {
     try {
       if (this.isDevelopment) {
@@ -931,11 +878,6 @@ class UserManagementService {
     }
   }
 
-  /**
-   * Toggle user status (activate/deactivate)
-   * @param userId - User ID to toggle
-   * @returns Promise with toggle response
-   */
   async toggleUserStatus(userId: string): Promise<UserStatusToggleResponse> {
     try {
       // Validate input parameters
@@ -1043,11 +985,6 @@ class UserManagementService {
     }
   }
 
-  /**
-   * Get user by phone number
-   * @param phoneNumber - User's phone number
-   * @returns Promise with user if found, undefined otherwise
-   */
   async getUserByPhoneNumber(phoneNumber: string): Promise<User | undefined> {
     try {
       if (this.isDevelopment) {
@@ -1063,11 +1000,6 @@ class UserManagementService {
     }
   }
 
-  /**
-   * Check if user exists
-   * @param phoneNumber - User's phone number
-   * @returns Promise with boolean indicating if user exists
-   */
   async userExists(phoneNumber: string): Promise<boolean> {
     try {
       if (this.isDevelopment) {
@@ -1082,11 +1014,6 @@ class UserManagementService {
     }
   }
 
-  /**
-   * Join a group using admin's code_group
-   * @param codeGroup - Admin's group code
-   * @returns Promise with join group response
-   */
   async joinGroup(codeGroup: string): Promise<JoinGroupResponse> {
     try {
       // Validate input
@@ -1186,10 +1113,6 @@ class UserManagementService {
     }
   }
 
-  /**
-   * Log out user
-   * @returns Promise
-   */
   async logout(): Promise<void> {
     if (!this.isDevelopment) {
       // Clear token from storage

@@ -2,15 +2,11 @@ const GroupMember = require('../models/GroupMember');
 const User = require('../models/User');
 const Admin = require('../models/Admin');
 
-// @desc    Add a user to a group
-// @route   POST /api/group-members
-// @access  Private (Admin only)
 exports.addUserToGroup = async (req, res, next) => {
   try {
     const { user_id } = req.body;
-    const admin_id = req.admin.id_admin; // From auth middleware
+    const admin_id = req.admin.id_admin;
     
-    // Validate input
     if (!user_id) {
       return res.status(400).json({
         success: false,
@@ -19,7 +15,6 @@ exports.addUserToGroup = async (req, res, next) => {
       });
     }
 
-    // Check if user exists
     const user = await User.findById_user(user_id);
     if (!user) {
       return res.status(404).json({
@@ -29,7 +24,6 @@ exports.addUserToGroup = async (req, res, next) => {
       });
     }
 
-    // Create group member relationship
     const groupMember = await GroupMember.create({
       admin_id,
       user_id
@@ -41,7 +35,6 @@ exports.addUserToGroup = async (req, res, next) => {
       data: groupMember
     });
   } catch (error) {
-    // Handle duplicate entry error
     if (error.message === 'User is already a member of this group') {
       return res.status(400).json({
         success: false,
@@ -53,12 +46,9 @@ exports.addUserToGroup = async (req, res, next) => {
   }
 };
 
-// @desc    Get all members in an admin's group
-// @route   GET /api/group-members/admin
-// @access  Private (Admin only)
 exports.getGroupMembers = async (req, res, next) => {
   try {
-    const admin_id = req.admin.id_admin; // From auth middleware
+    const admin_id = req.admin.id_admin;
     const includeUserDetails = req.query.details === 'true';
     
     const members = await GroupMember.findByAdminId(admin_id, includeUserDetails);
@@ -75,9 +65,6 @@ exports.getGroupMembers = async (req, res, next) => {
   }
 };
 
-// @desc    Get all groups a user belongs to
-// @route   GET /api/group-members/user/:user_id
-// @access  Private (Admin only or self)
 exports.getUserGroups = async (req, res, next) => {
   try {
     const { user_id } = req.params;
@@ -93,7 +80,6 @@ exports.getUserGroups = async (req, res, next) => {
       });
     }
 
-    // Check if user exists
     const user = await User.findById_user(user_id);
     if (!user) {
       return res.status(404).json({
@@ -117,9 +103,6 @@ exports.getUserGroups = async (req, res, next) => {
   }
 };
 
-// @desc    Get all groups the current user belongs to
-// @route   GET /api/group-members/me
-// @access  Private
 exports.getMyGroups = async (req, res, next) => {
   try {
     const user_id = req.isAdmin ? req.user.id_admin : req.user.id_user;
@@ -139,9 +122,6 @@ exports.getMyGroups = async (req, res, next) => {
   }
 };
 
-// @desc    Get all group members (paginated)
-// @route   GET /api/group-members
-// @access  Private (Super Admin only)
 exports.getAllGroupMembers = async (req, res, next) => {
   try {
     // Authorization check: super admin only
@@ -169,9 +149,6 @@ exports.getAllGroupMembers = async (req, res, next) => {
   }
 };
 
-// @desc    Check if a user is a member of a group
-// @route   GET /api/group-members/check/:user_id
-// @access  Private (Admin only)
 exports.checkGroupMembership = async (req, res, next) => {
   try {
     const admin_id = req.admin.id_admin;
@@ -192,15 +169,11 @@ exports.checkGroupMembership = async (req, res, next) => {
   }
 };
 
-// @desc    Remove a user from a group
-// @route   DELETE /api/group-members/:user_id
-// @access  Private (Admin only)
 exports.removeUserFromGroup = async (req, res, next) => {
   try {
     const admin_id = req.admin.id_admin;
     const { user_id } = req.params;
     
-    // Check if the relationship exists
     const relationship = await GroupMember.findOne({
       admin_id,
       user_id
@@ -226,9 +199,6 @@ exports.removeUserFromGroup = async (req, res, next) => {
   }
 };
 
-// @desc    Remove all users from a group
-// @route   DELETE /api/group-members/admin
-// @access  Private (Admin only)
 exports.removeAllUsersFromGroup = async (req, res, next) => {
   try {
     const admin_id = req.admin.id_admin;

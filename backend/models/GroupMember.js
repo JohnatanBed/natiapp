@@ -1,6 +1,5 @@
 const { query } = require('../config/db');
 
-// GroupMember model class
 class GroupMember {
   constructor(groupMemberData) {
     this.admin_id = groupMemberData.admin_id;
@@ -8,9 +7,7 @@ class GroupMember {
     this.union_date = groupMemberData.union_date || new Date();
   }
 
-  // Add a user to a group (create a new group member)
   static async create(groupMemberData) {
-    // Check if user exists
     const userExistsQuery = 'SELECT id_user FROM users WHERE id_user = ? LIMIT 1';
     const userExists = await query(userExistsQuery, [groupMemberData.user_id]);
     
@@ -18,7 +15,6 @@ class GroupMember {
       throw new Error('User does not exist');
     }
 
-    // Check if admin exists
     const adminExistsQuery = 'SELECT id_admin FROM admins WHERE id_admin = ? LIMIT 1';
     const adminExists = await query(adminExistsQuery, [groupMemberData.admin_id]);
     
@@ -26,7 +22,6 @@ class GroupMember {
       throw new Error('Admin does not exist');
     }
 
-    // Check if the relation already exists
     const relationExists = await this.findOne({
       admin_id: groupMemberData.admin_id,
       user_id: groupMemberData.user_id
@@ -36,14 +31,12 @@ class GroupMember {
       throw new Error('User is already a member of this group');
     }
 
-    // Insert group member into database
     const sql = 'INSERT INTO group_members (admin_id, user_id) VALUES (?, ?) RETURNING *';
     const params = [groupMemberData.admin_id, groupMemberData.user_id];
 
     const result = await query(sql, params);
     const newMember = result[0];
 
-    // Return the newly created group member
     return {
       admin_id: newMember.admin_id,
       user_id: newMember.user_id,
@@ -51,7 +44,6 @@ class GroupMember {
     };
   }
 
-  // Find a specific group member by admin_id and user_id
   static async findOne(criteria) {
     let sql = 'SELECT * FROM group_members WHERE ';
     const params = [];
@@ -74,7 +66,6 @@ class GroupMember {
     return results[0];
   }
 
-  // Get all members of a specific admin's group
   static async findByAdminId(admin_id, includeUserDetails = false) {
     let sql;
     
@@ -95,7 +86,6 @@ class GroupMember {
     return results;
   }
 
-  // Get all groups that a specific user belongs to
   static async findByUserId(user_id, includeAdminDetails = false) {
     let sql;
     
@@ -116,7 +106,6 @@ class GroupMember {
     return results;
   }
 
-  // Get all group members (with optional pagination)
   static async findAll(page = 1, limit = 10) {
     const offset = (page - 1) * limit;
     const sql = `
@@ -132,7 +121,6 @@ class GroupMember {
     
     const results = await query(sql, [limit, offset]);
     
-    // Get total count for pagination
     const countResult = await query('SELECT COUNT(*) as total FROM group_members');
     const totalCount = countResult[0].total;
     
@@ -146,7 +134,6 @@ class GroupMember {
     };
   }
 
-  // Remove a user from a group
   static async delete(admin_id, user_id) {
     const sql = 'DELETE FROM group_members WHERE admin_id = ? AND user_id = ?';
     const { rowCount } = await query(sql, [admin_id, user_id]);
@@ -154,7 +141,6 @@ class GroupMember {
     return { deletedCount: rowCount || 0 };
   }
 
-  // Remove all users from a specific admin's group
   static async deleteAllByAdminId(admin_id) {
     const sql = 'DELETE FROM group_members WHERE admin_id = ?';
     const { rowCount } = await query(sql, [admin_id]);
@@ -162,7 +148,6 @@ class GroupMember {
     return { deletedCount: rowCount || 0 };
   }
 
-  // Remove a user from all groups
   static async deleteAllByUserId(user_id) {
     const sql = 'DELETE FROM group_members WHERE user_id = ?';
     const { rowCount } = await query(sql, [user_id]);
@@ -170,7 +155,6 @@ class GroupMember {
     return { deletedCount: rowCount || 0 };
   }
 
-  // Count members in a specific admin's group
   static async countMembersByAdminId(admin_id) {
     const sql = 'SELECT COUNT(*) as count FROM group_members WHERE admin_id = ?';
     const result = await query(sql, [admin_id]);
@@ -178,7 +162,6 @@ class GroupMember {
     return parseInt(result[0].count) || 0;
   }
 
-  // Count groups that a specific user belongs to
   static async countGroupsByUserId(user_id) {
     const sql = 'SELECT COUNT(*) as count FROM group_members WHERE user_id = ?';
     const result = await query(sql, [user_id]);

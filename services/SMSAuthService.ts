@@ -21,9 +21,6 @@ class SMSAuthService {
   private sessionStorage: Map<string, { code: string; expiresAt: number; attempts: number }> = new Map();
   private isDevelopment: boolean = true; // Set to false when you have a real backend
 
-  /**
-   * Check if we're in development mode
-   */
   private isDevMode(): boolean {
     // Check multiple ways to determine if we're in development
     try {
@@ -33,11 +30,6 @@ class SMSAuthService {
     }
   }
 
-  /**
-   * Send SMS verification code to phone number
-   * @param phoneNumber - Phone number in 10-digit format (XXXXXXXXXX)
-   * @returns Promise with SMS response
-   */
   async sendVerificationCode(phoneNumber: string): Promise<SMSResponse> {
     try {
       // Validate input parameters
@@ -71,7 +63,7 @@ class SMSAuthService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          phoneNumber: phoneNumber.trim(), // Now sending 10-digit format
+          phoneNumber: phoneNumber.trim(),
           countryCode: '+57', // Colombia (implicit for all numbers)
         }),
       });
@@ -146,13 +138,6 @@ class SMSAuthService {
     }
   }
 
-  /**
-   * Verify SMS code
-   * @param phoneNumber - Phone number
-   * @param code - 4-digit verification code
-   * @param sessionId - Session ID from SMS sending
-   * @returns Promise with verification response
-   */
   async verifyCode(phoneNumber: string, code: string, sessionId?: string): Promise<VerificationResponse> {
     try {
       // Validate input parameters
@@ -287,11 +272,6 @@ class SMSAuthService {
     }
   }
 
-  /**
-   * Validate phone number format
-   * @param phoneNumber - Phone number to validate
-   * @returns boolean
-   */
   private isValidPhoneNumber(phoneNumber: string): boolean {
     // Colombian phone number validation - only 10 digits
     const cleaned = phoneNumber.replace(/\D/g, '');
@@ -304,11 +284,6 @@ class SMSAuthService {
     return false;
   }
 
-  /**
-   * Format phone number to standard
-   * @param phoneNumber - Raw phone number
-   * @returns Formatted phone number (10 digits only)
-   */
   formatPhoneNumber(phoneNumber: string): string {
     const cleaned = phoneNumber.replace(/\D/g, '');
     
@@ -325,9 +300,6 @@ class SMSAuthService {
     return phoneNumber;
   }
 
-  /**
-   * Development/Testing: Simulate SMS sending
-   */
   private simulateSMSSending(phoneNumber: string): Promise<SMSResponse> {
     return new Promise((resolve) => {
       console.log('[SMS Service] Simulating SMS sending for:', phoneNumber);
@@ -357,9 +329,6 @@ class SMSAuthService {
     });
   }
 
-  /**
-   * Development/Testing: Simulate code verification
-   */
   private simulateCodeVerification(phoneNumber: string, code: string): Promise<VerificationResponse> {
     return new Promise((resolve) => {
       setTimeout(() => {
@@ -418,9 +387,6 @@ class SMSAuthService {
     });
   }
 
-  /**
-   * Clear expired sessions (cleanup)
-   */
   clearExpiredSessions(): void {
     const now = Date.now();
     for (const [phoneNumber, session] of this.sessionStorage.entries()) {
@@ -430,9 +396,6 @@ class SMSAuthService {
     }
   }
 
-  /**
-   * Get service status for debugging
-   */
   getServiceStatus(): { isDevelopment: boolean; devMode: boolean; sessionsCount: number; baseURL: string } {
     return {
       isDevelopment: this.isDevelopment,

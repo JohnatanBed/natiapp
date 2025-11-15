@@ -1,21 +1,16 @@
 const Admin = require('../models/Admin');
 const jwt = require('jsonwebtoken');
 
-// Helper function to generate JWT token
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: '30d'
   });
 };
 
-// @desc    Create first admin (for setup only)
-// @route   POST /api/setup/create-admin
-// @access  Public (but can be restricted in production)
 exports.createFirstAdmin = async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
     
-    // Check if any admin exists
     const adminCount = await Admin.countDocuments();
     
     if (adminCount > 0) {
@@ -26,7 +21,6 @@ exports.createFirstAdmin = async (req, res, next) => {
       });
     }
     
-    // Create admin
     const admin = await Admin.create({
       name,
       email,
@@ -37,7 +31,6 @@ exports.createFirstAdmin = async (req, res, next) => {
       }
     });
     
-    // Create and return JWT token
     const token = generateToken(admin._id);
     
     res.status(201).json({
