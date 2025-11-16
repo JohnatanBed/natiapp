@@ -2,7 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const fileUpload = require('express-fileupload');
 const errorHandler = require('./middleware/error');
-require('dotenv').config({ debug: false });
 const { connectDB } = require('./config/db');
 
 const authRoutes = require('./routes/authRoutes');
