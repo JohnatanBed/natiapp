@@ -78,12 +78,20 @@ private baseURL: string = 'https://natiapp.onrender.com/api';
       
       if (!response.ok) {
         let errorMessage;
+        let errorData: any = null;
         try {
-          const errorData = JSON.parse(responseText);
+          errorData = JSON.parse(responseText);
           errorMessage = errorData.error || errorData.message || `API Error: ${response.status}`;
         } catch (e) {
           errorMessage = `API Error: ${response.status} - ${responseText || 'No response body'}`;
         }
+        
+        // Si es un error de autenticación (token inválido), limpiar el token
+        if (response.status === 401 && (errorMessage.includes('Invalid token') || errorMessage.includes('Not authorized'))) {
+          console.log('[ApiService] Token inválido detectado, limpiando token...');
+          await this.clearToken();
+        }
+        
         throw new Error(errorMessage);
       }
 
@@ -116,12 +124,20 @@ private baseURL: string = 'https://natiapp.onrender.com/api';
       
       if (!response.ok) {
         let errorMessage;
+        let errorData: any = null;
         try {
-          const errorData = JSON.parse(responseText);
+          errorData = JSON.parse(responseText);
           errorMessage = errorData.error || errorData.message || `API Error: ${response.status}`;
         } catch (e) {
           errorMessage = `API Error: ${response.status} - ${responseText || 'No response body'}`;
         }
+        
+        // Si es un error de autenticación (token inválido), limpiar el token
+        if (response.status === 401 && (errorMessage.includes('Invalid token') || errorMessage.includes('Not authorized'))) {
+          console.log('[ApiService] Token inválido detectado, limpiando token...');
+          await this.clearToken();
+        }
+        
         throw new Error(errorMessage);
       }
 
@@ -154,12 +170,20 @@ private baseURL: string = 'https://natiapp.onrender.com/api';
       
       if (!response.ok) {
         let errorMessage;
+        let errorData: any = null;
         try {
-          const errorData = JSON.parse(responseText);
+          errorData = JSON.parse(responseText);
           errorMessage = errorData.error || errorData.message || `API Error: ${response.status}`;
         } catch (e) {
           errorMessage = `API Error: ${response.status} - ${responseText || 'No response body'}`;
         }
+        
+        // Si es un error de autenticación (token inválido), limpiar el token
+        if (response.status === 401 && (errorMessage.includes('Invalid token') || errorMessage.includes('Not authorized'))) {
+          console.log('[ApiService] Token inválido detectado, limpiando token...');
+          await this.clearToken();
+        }
+        
         throw new Error(errorMessage);
       }
 
@@ -191,12 +215,20 @@ private baseURL: string = 'https://natiapp.onrender.com/api';
       
       if (!response.ok) {
         let errorMessage;
+        let errorData: any = null;
         try {
-          const errorData = JSON.parse(responseText);
+          errorData = JSON.parse(responseText);
           errorMessage = errorData.error || errorData.message || `API Error: ${response.status}`;
         } catch (e) {
           errorMessage = `API Error: ${response.status} - ${responseText || 'No response body'}`;
         }
+        
+        // Si es un error de autenticación (token inválido), limpiar el token
+        if (response.status === 401 && (errorMessage.includes('Invalid token') || errorMessage.includes('Not authorized'))) {
+          console.log('[ApiService] Token inválido detectado, limpiando token...');
+          await this.clearToken();
+        }
+        
         throw new Error(errorMessage);
       }
 
@@ -234,12 +266,20 @@ private baseURL: string = 'https://natiapp.onrender.com/api';
       
       if (!response.ok) {
         let errorMessage;
+        let errorData: any = null;
         try {
-          const errorData = JSON.parse(responseText);
+          errorData = JSON.parse(responseText);
           errorMessage = errorData.error || errorData.message || `API Error: ${response.status}`;
         } catch (e) {
           errorMessage = `API Error: ${response.status} - ${responseText || 'No response body'}`;
         }
+        
+        // Si es un error de autenticación (token inválido), limpiar el token
+        if (response.status === 401 && (errorMessage.includes('Invalid token') || errorMessage.includes('Not authorized'))) {
+          console.log('[ApiService] Token inválido detectado, limpiando token...');
+          await this.clearToken();
+        }
+        
         throw new Error(errorMessage);
       }
 

@@ -31,13 +31,13 @@ exports.createFirstAdmin = async (req, res, next) => {
       }
     });
     
-    const token = generateToken(admin._id, true);
+    const token = generateToken(admin.id_admin, true);
     
     res.status(201).json({
       success: true,
       message: 'Administrador creado exitosamente',
       admin: {
-        id: admin._id,
+        id: admin.id_admin,
         name: admin.name,
         email: admin.email,
         role: admin.role,
