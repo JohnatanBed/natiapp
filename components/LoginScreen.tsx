@@ -114,7 +114,9 @@ const LoginScreen = ({ onLoginSuccess, onNavigateToSignup, onNavigateToAdminLogi
       
       if (checkResult.success) {
         if (checkResult.exists) {
+          setMessage('');
           setMessageType('');
+          setIsVerifyingNumber(false);
           setCurrentStep(2);
           
           if (timerRef.current) {
