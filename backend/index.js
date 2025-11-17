@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const fileUpload = require('express-fileupload');
@@ -25,6 +26,13 @@ const app = express();
 app.use(express.json());
 
 app.use(cors());
+
+// Request logging middleware
+app.use((req, res, next) => {
+  console.log(`\n${new Date().toISOString()} - ${req.method} ${req.url}`);
+  console.log('Headers:', JSON.stringify(req.headers.authorization ? { authorization: req.headers.authorization.substring(0, 20) + '...' } : {}, null, 2));
+  next();
+});
 
 // File upload middleware
 app.use(fileUpload({

@@ -1,8 +1,8 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
+const generateToken = (id, isAdmin = false) => {
+  return jwt.sign({ id, isAdmin }, process.env.JWT_SECRET, {
     expiresIn: '30d'
   });
 };
@@ -39,7 +39,7 @@ exports.register = async (req, res, next) => {
       password
     });
         
-    const token = generateToken(user.id_user);
+    const token = generateToken(user.id_user, false);
     
     res.status(201).json({
       success: true,
@@ -94,8 +94,8 @@ exports.login = async (req, res, next) => {
       });
     }
     
-    const token = generateToken(user.id_user);
-    
+    const token = generateToken(user.id_user, false);
+
     res.status(200).json({
       success: true,
       message: 'Login exitoso',
@@ -138,7 +138,7 @@ exports.adminLogin = async (req, res, next) => {
       });
     }
     
-    const token = generateToken(admin.id_admin);
+    const token = generateToken(admin.id_admin, true);
     
     res.status(200).json({
       success: true,
@@ -230,7 +230,7 @@ exports.adminRegister = async (req, res, next) => {
         role: 'admin'
       });
       
-      const token = generateToken(admin.id_admin);
+      const token = generateToken(admin.id_admin, true);
       
       res.status(201).json({
         success: true,

@@ -40,7 +40,7 @@ private baseURL: string = 'https://natiapp.onrender.com/api';
     try {
       await AsyncStorage.setItem('natiapp_token', token);
     } catch (error) {
-      console.error('Error storing token:', error);
+      console.error('[ApiService] Error storing token:', error);
     }
   }
 
@@ -60,7 +60,7 @@ private baseURL: string = 'https://natiapp.onrender.com/api';
         this.token = storedToken;
       }
     } catch (error) {
-      console.error('Error loading token:', error);
+      console.error('[ApiService] Error loading token:', error);
     }
   }
 

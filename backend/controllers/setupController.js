@@ -1,8 +1,8 @@
 const Admin = require('../models/Admin');
 const jwt = require('jsonwebtoken');
 
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
+const generateToken = (id, isAdmin = false) => {
+  return jwt.sign({ id, isAdmin }, process.env.JWT_SECRET, {
     expiresIn: '30d'
   });
 };
@@ -31,7 +31,7 @@ exports.createFirstAdmin = async (req, res, next) => {
       }
     });
     
-    const token = generateToken(admin._id);
+    const token = generateToken(admin._id, true);
     
     res.status(201).json({
       success: true,

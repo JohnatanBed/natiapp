@@ -23,6 +23,8 @@ exports.protect = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
     const tokenId = decoded.id;
+    const isAdminToken = decoded.isAdmin === true;
+    
     
     if (!tokenId || tokenId === undefined) {
       return res.status(401).json({
@@ -31,14 +33,27 @@ exports.protect = async (req, res, next) => {
       });
     }
     
-    const Admin = require('../models/Admin');
-    const admin = await Admin.findById(tokenId);
-    
-    if (admin) {
-      req.user = admin;
-      req.isAdmin = true;
-      return next();
+    // Check admin first only if the token explicitly says it's an admin
+    if (isAdminToken) {
+      const Admin = require('../models/Admin');
+      const admin = await Admin.findById(tokenId);
+      
+      if (admin) {
+        // Ensure id_admin is properly set (PostgreSQL returns lowercase column names)
+        req.user = {
+          id_admin: admin.id_admin || tokenId,
+          name: admin.name,
+          email: admin.email,
+          code_group: admin.code_group,
+          role: admin.role,
+          registeredAt: admin.registeredat || admin.registeredAt
+        };
+        req.isAdmin = true;
+        return next();
+      }
     }
+    
+    // Otherwise, look for a regular user
     
     const [rows] = await db.query('SELECT * FROM users WHERE id_user = ?', [tokenId]);
     
@@ -49,15 +64,25 @@ exports.protect = async (req, res, next) => {
       });
     }
 
-    req.user = await User.findById_user(tokenId);
+    const user = await User.findById_user(tokenId);
     req.isAdmin = false;
 
-    if (!req.user) {
+    if (!user) {
       return res.status(401).json({
         success: false,
         error: 'User not found with this ID'
       });
     }
+    
+    // Ensure id_user is properly set (PostgreSQL returns lowercase column names)
+    req.user = {
+      id_user: user.id_user || tokenId,
+      name: user.name,
+      phoneNumber: user.phonenumber || user.phoneNumber,
+      role: user.role,
+      code_group: user.code_group,
+      registeredAt: user.registeredat || user.registeredAt
+    };
     
     next();
   } catch (error) {
